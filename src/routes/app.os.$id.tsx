@@ -140,8 +140,8 @@ function Page() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     await supabase.from("ordens_servico").update({
-      descricao_problema: fd.get("descricao_problema"),
-      diagnostico: fd.get("diagnostico"),
+      descricao_problema: String(fd.get("descricao_problema") ?? ""),
+      diagnostico: String(fd.get("diagnostico") ?? ""),
       desconto: Number(fd.get("desconto") || 0),
     }).eq("id", id);
     toast.success("OS atualizada");
