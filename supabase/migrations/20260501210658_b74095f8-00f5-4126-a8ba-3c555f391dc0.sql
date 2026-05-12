@@ -1,6 +1,6 @@
 
 -- clientes_oficina
-CREATE TABLE public.clientes_oficina (
+CREATE TABLE IF NOT EXISTS public.clientes_oficina (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
   nome TEXT NOT NULL,
@@ -13,10 +13,13 @@ CREATE TABLE public.clientes_oficina (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.clientes_oficina ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "own clientes_oficina" ON public.clientes_oficina FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY "own clientes_oficina" ON public.clientes_oficina FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Veículos
-CREATE TABLE public.veiculos (
+CREATE TABLE IF NOT EXISTS public.veiculos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
   cliente_id UUID NOT NULL REFERENCES public.clientes_oficina(id) ON DELETE CASCADE,
@@ -33,10 +36,13 @@ CREATE TABLE public.veiculos (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.veiculos ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "own veiculos" ON public.veiculos FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY "own veiculos" ON public.veiculos FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Funcionários (mecânicos)
-CREATE TABLE public.funcionarios (
+CREATE TABLE IF NOT EXISTS public.funcionarios (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
   nome TEXT NOT NULL,
@@ -48,10 +54,13 @@ CREATE TABLE public.funcionarios (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.funcionarios ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "own funcionarios" ON public.funcionarios FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY "own funcionarios" ON public.funcionarios FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Peças / Estoque
-CREATE TABLE public.pecas (
+CREATE TABLE IF NOT EXISTS public.pecas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
   codigo TEXT,
@@ -66,17 +75,20 @@ CREATE TABLE public.pecas (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.pecas ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "own pecas" ON public.pecas FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY "own pecas" ON public.pecas FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Ordens de Serviço
-CREATE TABLE public.ordens_servico (
+CREATE TABLE IF NOT EXISTS public.ordens_servico (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
   numero SERIAL,
   cliente_id UUID NOT NULL REFERENCES public.clientes_oficina(id) ON DELETE RESTRICT,
   veiculo_id UUID NOT NULL REFERENCES public.veiculos(id) ON DELETE RESTRICT,
   funcionario_id UUID REFERENCES public.funcionarios(id) ON DELETE SET NULL,
-  status TEXT NOT NULL DEFAULT 'aberta', -- aberta | em_andamento | aguardando_pecas | concluida | cancelada
+  status TEXT NOT NULL DEFAULT 'aberta',
   descricao_problema TEXT,
   diagnostico TEXT,
   km_entrada INT,
@@ -94,14 +106,17 @@ CREATE TABLE public.ordens_servico (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.ordens_servico ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "own os" ON public.ordens_servico FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY "own os" ON public.ordens_servico FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Itens da OS (peças e serviços)
-CREATE TABLE public.os_itens (
+CREATE TABLE IF NOT EXISTS public.os_itens (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
   os_id UUID NOT NULL REFERENCES public.ordens_servico(id) ON DELETE CASCADE,
-  tipo TEXT NOT NULL, -- 'peca' | 'servico'
+  tipo TEXT NOT NULL,
   peca_id UUID REFERENCES public.pecas(id) ON DELETE SET NULL,
   descricao TEXT NOT NULL,
   quantidade NUMERIC(12,2) NOT NULL DEFAULT 1,
@@ -110,10 +125,13 @@ CREATE TABLE public.os_itens (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.os_itens ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "own os_itens" ON public.os_itens FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY "own os_itens" ON public.os_itens FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Agendamentos
-CREATE TABLE public.agendamentos (
+CREATE TABLE IF NOT EXISTS public.agendamentos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
   cliente_id UUID REFERENCES public.clientes_oficina(id) ON DELETE SET NULL,
@@ -123,17 +141,20 @@ CREATE TABLE public.agendamentos (
   descricao TEXT,
   data_hora TIMESTAMPTZ NOT NULL,
   duracao_min INT DEFAULT 60,
-  status TEXT NOT NULL DEFAULT 'agendado', -- agendado | concluido | cancelado
+  status TEXT NOT NULL DEFAULT 'agendado',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.agendamentos ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "own agendamentos" ON public.agendamentos FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY "own agendamentos" ON public.agendamentos FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Financeiro
-CREATE TABLE public.financeiro (
+CREATE TABLE IF NOT EXISTS public.financeiro (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
-  tipo TEXT NOT NULL, -- 'receita' | 'despesa'
+  tipo TEXT NOT NULL,
   categoria TEXT,
   descricao TEXT NOT NULL,
   valor NUMERIC(12,2) NOT NULL,
@@ -146,20 +167,27 @@ CREATE TABLE public.financeiro (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.financeiro ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "own financeiro" ON public.financeiro FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY "own financeiro" ON public.financeiro FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- updated_at trigger
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END; $$;
 
+DROP TRIGGER IF EXISTS tg_clientes_oficina_upd ON public.clientes_oficina;
 CREATE TRIGGER tg_clientes_oficina_upd BEFORE UPDATE ON public.clientes_oficina FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+DROP TRIGGER IF EXISTS tg_veiculos_upd ON public.veiculos;
 CREATE TRIGGER tg_veiculos_upd BEFORE UPDATE ON public.veiculos FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+DROP TRIGGER IF EXISTS tg_pecas_upd ON public.pecas;
 CREATE TRIGGER tg_pecas_upd BEFORE UPDATE ON public.pecas FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+DROP TRIGGER IF EXISTS tg_os_upd ON public.ordens_servico;
 CREATE TRIGGER tg_os_upd BEFORE UPDATE ON public.ordens_servico FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
-CREATE INDEX idx_veiculos_cliente ON public.veiculos(cliente_id);
-CREATE INDEX idx_os_user_status ON public.ordens_servico(user_id, status);
-CREATE INDEX idx_os_itens_os ON public.os_itens(os_id);
-CREATE INDEX idx_fin_user_data ON public.financeiro(user_id, data_vencimento);
-CREATE INDEX idx_agend_user_data ON public.agendamentos(user_id, data_hora);
+CREATE INDEX IF NOT EXISTS idx_veiculos_cliente ON public.veiculos(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_os_user_status ON public.ordens_servico(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_os_itens_os ON public.os_itens(os_id);
+CREATE INDEX IF NOT EXISTS idx_fin_user_data ON public.financeiro(user_id, data_vencimento);
+CREATE INDEX IF NOT EXISTS idx_agend_user_data ON public.agendamentos(user_id, data_hora);
