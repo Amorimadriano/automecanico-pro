@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { BRL, fmtDate } from "@/lib/format";
-import { ClipboardList, DollarSign, AlertTriangle, Calendar, TrendingUp, Wrench } from "lucide-react";
+import { ClipboardList, DollarSign, AlertTriangle, Calendar, TrendingUp, Wrench, Car, ShieldAlert } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { Link } from "@tanstack/react-router";
 
@@ -14,15 +14,26 @@ export const Route = createFileRoute("/app/")({
 
 function Dashboard() {
   const [data, setData] = useState<any>(null);
+  const [revisoes, setRevisoes] = useState<any[]>([]);
 
   useEffect(() => { load(); }, []);
 
   async function load() {
-    const [os, fin, pecas, agenda] = await Promise.all([
-      supabase.from("ordens_servico").select("*").order("created_at", { ascending: false }),
-      supabase.from("financeiro").select("*"),
-      supabase.from("pecas").select("*"),
-      supabase.from("agendamentos").select("*, clientes(nome), veiculos(placa)").gte("data_hora", new Date().toISOString()).order("data_hora").limit(5),
+    const hoje = new Date().toISOString().slice(0, 10);
+    const daqui15 = new Date(); daqui15.setDate(daqui15.getDate() + 15);
+    const dataLimite = daqui15.toISOString().slice(0, 10);
+
+    const [os, fin, pecas, agenda, rev, gar] = await Promise.all([
+      supabase.from("ordens_servico_mecanico").select("*").order("created_at", { ascending: false }),
+      supabase.from("financeiro_mecanico").select("*"),
+      supabase.from("pecas_mecanico").select("*"),
+      supabase.from("agendamentos_mecanico").select("*, clientes_mecanico(nome), veiculos_mecanico(placa)").gte("data_hora", new Date().toISOString()).order("data_hora").limit(5),
+      supabase.rpc("veiculos_revisao_proxima"),
+      supabase.from("v_garantias_ativas_mecanico").select("*")
+        .gte("garantia_data_vencimento", hoje)
+        .lte("garantia_data_vencimento", dataLimite)
+        .order("garantia_data_vencimento", { ascending: true })
+        .limit(5),
     ]);
 
     const now = new Date();
@@ -55,7 +66,8 @@ function Dashboard() {
       series.push({ mes: d.toLocaleDateString("pt-BR", { month: "short" }), valor: total });
     }
 
-    setData({ abertas, faturamentoMes, ticketMedio, aReceber, aPagar, estoqueBaixo, series, agenda: agenda.data ?? [], recentes: osList.slice(0, 5) });
+    setData({ abertas, faturamentoMes, ticketMedio, aReceber, aPagar, estoqueBaixo, series, agenda: agenda.data ?? [], recentes: osList.slice(0, 5), garantias: gar.data ?? [] });
+    setRevisoes(rev.data ?? []);
   }
 
   if (!data) return <div className="text-muted-foreground">Carregando dashboard...</div>;
@@ -101,6 +113,36 @@ function Dashboard() {
         </div>
 
         <div className="space-y-6">
+          {revisoes.length > 0 && (
+            <div className="bg-card border border-warning/40 rounded-xl p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <Car className="h-5 w-5 text-warning" />
+                <h3 className="font-display text-base">Revisões próximas</h3>
+              </div>
+              <ul className="space-y-2 text-sm">
+                {revisoes.slice(0, 5).map((r: any) => (
+                  <li key={r.id} className="flex justify-between items-center">
+                    <div className="flex flex-col">
+                      <span className="font-medium">{r.placa} — {[r.marca, r.modelo].filter(Boolean).join(" ")}</span>
+                      <span className="text-xs text-muted-foreground">{r.cliente_nome}</span>
+                    </div>
+                    <div className="text-right">
+                      {r.alerta === 'revisao_data' && r.data_proxima_revisao && (
+                        <span className="text-xs text-warning">{fmtDate(r.data_proxima_revisao)}</span>
+                      )}
+                      {r.alerta === 'revisao_km' && r.km_proxima_revisao != null && (
+                        <span className="text-xs text-warning">{r.km_atual?.toLocaleString("pt-BR")} / {r.km_proxima_revisao.toLocaleString("pt-BR")} km</span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              {revisoes.length > 5 && (
+                <p className="text-xs text-muted-foreground mt-2">+{revisoes.length - 5} veículo(s)</p>
+              )}
+            </div>
+          )}
+
           {data.estoqueBaixo.length > 0 && (
             <div className="bg-card border border-destructive/40 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-3">
@@ -131,13 +173,34 @@ function Dashboard() {
                   <li key={a.id} className="border-l-2 border-primary pl-3">
                     <div className="font-medium">{a.titulo}</div>
                     <div className="text-xs text-muted-foreground">
-                      {fmtDate(a.data_hora)} • {a.clientes?.nome ?? "—"} {a.veiculos?.placa && `• ${a.veiculos.placa}`}
+                      {fmtDate(a.data_hora)} • {a.clientes_mecanico?.nome ?? "—"} {a.veiculos_mecanico?.placa && `• ${a.veiculos_mecanico.placa}`}
                     </div>
                   </li>
                 ))}
               </ul>
             )}
           </div>
+
+          {data.garantias.length > 0 && (
+            <div className="bg-card border border-amber-500/30 rounded-xl p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <ShieldAlert className="h-5 w-5 text-amber-400" />
+                <h3 className="font-display text-base">Garantias próximas do vencimento</h3>
+              </div>
+              <ul className="space-y-2 text-sm">
+                {data.garantias.map((g: any) => (
+                  <li key={g.item_id} className="flex justify-between items-center">
+                    <div>
+                      <div className="font-medium">{g.descricao}</div>
+                      <div className="text-xs text-muted-foreground">OS #{g.os_numero}</div>
+                    </div>
+                    <span className="text-amber-400 font-mono text-xs">{fmtDate(g.garantia_data_vencimento)}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link to="/app/garantias" className="text-xs text-primary hover:underline mt-3 inline-block">Ver todas →</Link>
+            </div>
+          )}
         </div>
       </div>
 

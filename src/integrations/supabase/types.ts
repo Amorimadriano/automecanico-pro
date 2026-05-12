@@ -14,7 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      agendamentos: {
+      agendamentos_mecanico: {
         Row: {
           cliente_id: string | null
           created_at: string
@@ -59,26 +59,26 @@ export type Database = {
             foreignKeyName: "agendamentos_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "clientes"
+            referencedRelation: "clientes_mecanico"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "agendamentos_funcionario_id_fkey"
             columns: ["funcionario_id"]
             isOneToOne: false
-            referencedRelation: "funcionarios"
+            referencedRelation: "funcionarios_mecanico"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "agendamentos_veiculo_id_fkey"
             columns: ["veiculo_id"]
             isOneToOne: false
-            referencedRelation: "veiculos"
+            referencedRelation: "veiculos_mecanico"
             referencedColumns: ["id"]
           },
         ]
       }
-      clientes: {
+      clientes_mecanico: {
         Row: {
           created_at: string
           documento: string | null
@@ -117,7 +117,61 @@ export type Database = {
         }
         Relationships: []
       }
-      financeiro: {
+      comissoes_mecanico: {
+        Row: {
+          created_at: string
+          data_pagamento: string | null
+          funcionario_id: string
+          id: string
+          os_id: string
+          pago: boolean
+          percentual: number
+          user_id: string
+          valor_comissao: number
+          valor_total_servicos: number
+        }
+        Insert: {
+          created_at?: string
+          data_pagamento?: string | null
+          funcionario_id: string
+          id?: string
+          os_id: string
+          pago?: boolean
+          percentual: number
+          user_id: string
+          valor_comissao: number
+          valor_total_servicos: number
+        }
+        Update: {
+          created_at?: string
+          data_pagamento?: string | null
+          funcionario_id?: string
+          id?: string
+          os_id?: string
+          pago?: boolean
+          percentual?: number
+          user_id?: string
+          valor_comissao?: number
+          valor_total_servicos?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comissoes_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_mecanico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comissoes_os_id_fkey"
+            columns: ["os_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico_mecanico"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      financeiro_mecanico: {
         Row: {
           categoria: string | null
           created_at: string
@@ -168,12 +222,107 @@ export type Database = {
             foreignKeyName: "financeiro_os_id_fkey"
             columns: ["os_id"]
             isOneToOne: false
-            referencedRelation: "ordens_servico"
+            referencedRelation: "ordens_servico_mecanico"
             referencedColumns: ["id"]
           },
         ]
       }
-      funcionarios: {
+      fornecedor_catalogo_mecanico: {
+        Row: {
+          id: string
+          user_id: string
+          fornecedor_id: string
+          codigo: string
+          nome: string
+          descricao: string | null
+          preco: number | null
+          marca: string | null
+          categoria: string | null
+          ultima_atualizacao: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          fornecedor_id: string
+          codigo: string
+          nome: string
+          descricao?: string | null
+          preco?: number | null
+          marca?: string | null
+          categoria?: string | null
+          ultima_atualizacao?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          fornecedor_id?: string
+          codigo?: string
+          nome?: string
+          descricao?: string | null
+          preco?: number | null
+          marca?: string | null
+          categoria?: string | null
+          ultima_atualizacao?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fornecedor_catalogo_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores_mecanico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fornecedores_mecanico: {
+        Row: {
+          id: string
+          user_id: string
+          nome: string
+          cnpj: string | null
+          telefone: string | null
+          email: string | null
+          website: string | null
+          api_endpoint: string | null
+          api_key: string | null
+          ativo: boolean | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          nome: string
+          cnpj?: string | null
+          telefone?: string | null
+          email?: string | null
+          website?: string | null
+          api_endpoint?: string | null
+          api_key?: string | null
+          ativo?: boolean | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          nome?: string
+          cnpj?: string | null
+          telefone?: string | null
+          email?: string | null
+          website?: string | null
+          api_endpoint?: string | null
+          api_key?: string | null
+          ativo?: boolean | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      funcionarios_mecanico: {
         Row: {
           ativo: boolean | null
           cargo: string | null
@@ -209,7 +358,95 @@ export type Database = {
         }
         Relationships: []
       }
-      ordens_servico: {
+      orcamentos_mecanico: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          data_criacao: string
+          data_validade: string | null
+          desconto: number
+          descricao_problema: string | null
+          diagnostico: string | null
+          funcionario_id: string | null
+          id: string
+          km_entrada: number | null
+          numero: number
+          observacoes: string | null
+          status: string
+          total: number
+          total_pecas: number
+          total_servicos: number
+          updated_at: string
+          user_id: string
+          veiculo_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          data_criacao?: string
+          data_validade?: string | null
+          desconto?: number
+          descricao_problema?: string | null
+          diagnostico?: string | null
+          funcionario_id?: string | null
+          id?: string
+          km_entrada?: number | null
+          numero?: number
+          observacoes?: string | null
+          status?: string
+          total?: number
+          total_pecas?: number
+          total_servicos?: number
+          updated_at?: string
+          user_id: string
+          veiculo_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          data_criacao?: string
+          data_validade?: string | null
+          desconto?: number
+          descricao_problema?: string | null
+          diagnostico?: string | null
+          funcionario_id?: string | null
+          id?: string
+          km_entrada?: number | null
+          numero?: number
+          observacoes?: string | null
+          status?: string
+          total?: number
+          total_pecas?: number
+          total_servicos?: number
+          updated_at?: string
+          user_id?: string
+          veiculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_mecanico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios_mecanico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos_mecanico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ordens_servico_mecanico: {
         Row: {
           cliente_id: string
           created_at: string
@@ -287,59 +524,125 @@ export type Database = {
             foreignKeyName: "ordens_servico_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "clientes"
+            referencedRelation: "clientes_mecanico"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "ordens_servico_funcionario_id_fkey"
             columns: ["funcionario_id"]
             isOneToOne: false
-            referencedRelation: "funcionarios"
+            referencedRelation: "funcionarios_mecanico"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "ordens_servico_veiculo_id_fkey"
             columns: ["veiculo_id"]
             isOneToOne: false
-            referencedRelation: "veiculos"
+            referencedRelation: "veiculos_mecanico"
             referencedColumns: ["id"]
           },
         ]
       }
-      os_itens: {
+      orcamento_itens_mecanico: {
         Row: {
           created_at: string
           descricao: string
           id: string
-          os_id: string
+          orcamento_id: string
           peca_id: string | null
           preco_unitario: number
           quantidade: number
           subtotal: number
           tipo: string
+          updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
           descricao: string
           id?: string
-          os_id: string
+          orcamento_id: string
           peca_id?: string | null
           preco_unitario?: number
           quantidade?: number
           subtotal?: number
           tipo: string
+          updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
           descricao?: string
           id?: string
+          orcamento_id?: string
+          peca_id?: string | null
+          preco_unitario?: number
+          quantidade?: number
+          subtotal?: number
+          tipo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_itens_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos_mecanico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamento_itens_peca_id_fkey"
+            columns: ["peca_id"]
+            isOneToOne: false
+            referencedRelation: "pecas_mecanico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      os_itens_mecanico: {
+        Row: {
+          created_at: string
+          descricao: string
+          garantia_dias: number | null
+          garantia_data_vencimento: string | null
+          id: string
+          os_id: string
+          peca_id: string | null
+          preco_unitario: number
+          quantidade: number
+          subtotal: number
+          tem_garantia: boolean
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          garantia_dias?: number | null
+          garantia_data_vencimento?: string | null
+          id?: string
+          os_id: string
+          peca_id?: string | null
+          preco_unitario?: number
+          quantidade?: number
+          subtotal?: number
+          tem_garantia?: boolean
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          garantia_dias?: number | null
+          garantia_data_vencimento?: string | null
+          id?: string
           os_id?: string
           peca_id?: string | null
           preco_unitario?: number
           quantidade?: number
           subtotal?: number
+          tem_garantia?: boolean
           tipo?: string
           user_id?: string
         }
@@ -348,24 +651,25 @@ export type Database = {
             foreignKeyName: "os_itens_os_id_fkey"
             columns: ["os_id"]
             isOneToOne: false
-            referencedRelation: "ordens_servico"
+            referencedRelation: "ordens_servico_mecanico"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "os_itens_peca_id_fkey"
             columns: ["peca_id"]
             isOneToOne: false
-            referencedRelation: "pecas"
+            referencedRelation: "pecas_mecanico"
             referencedColumns: ["id"]
           },
         ]
       }
-      pecas: {
+      pecas_mecanico: {
         Row: {
           codigo: string | null
           created_at: string
           descricao: string | null
           estoque_minimo: number
+          garantia_padrao_dias: number | null
           id: string
           nome: string
           preco_custo: number | null
@@ -380,6 +684,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           estoque_minimo?: number
+          garantia_padrao_dias?: number | null
           id?: string
           nome: string
           preco_custo?: number | null
@@ -394,6 +699,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           estoque_minimo?: number
+          garantia_padrao_dias?: number | null
           id?: string
           nome?: string
           preco_custo?: number | null
@@ -405,7 +711,7 @@ export type Database = {
         }
         Relationships: []
       }
-      veiculos: {
+      veiculos_mecanico: {
         Row: {
           ano: number | null
           cliente_id: string
@@ -459,17 +765,200 @@ export type Database = {
             foreignKeyName: "veiculos_cliente_id_fkey"
             columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "clientes"
+            referencedRelation: "clientes_mecanico"
             referencedColumns: ["id"]
           },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      v_historico_veiculo_mecanico: {
+        Row: {
+          veiculo_id: string
+          placa: string
+          marca: string | null
+          modelo: string | null
+          ano: number | null
+          cor: string | null
+          km_atual: number | null
+          km_proxima_revisao: number | null
+          data_proxima_revisao: string | null
+          cliente_id: string
+          cliente_nome: string | null
+          os_id: string | null
+          numero: number | null
+          data_entrada: string | null
+          km_entrada: number | null
+          status: string | null
+          total: number | null
+          itens: Json
+        }
+        Insert: never
+        Update: never
+        Relationships: [
+          {
+            foreignKeyName: "ordens_servico_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_mecanico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_servico_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos_mecanico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_garantias_ativas_mecanico: {
+        Row: {
+          item_id: string
+          os_id: string
+          os_numero: number
+          descricao: string
+          tipo: string
+          garantia_dias: number | null
+          garantia_data_vencimento: string | null
+          tem_garantia: boolean
+          cliente_id: string
+          veiculo_id: string
+          user_id: string
+          data_entrada: string
+          data_conclusao: string | null
+        }
+        Insert: never
+        Update: never
+        Relationships: [
+          {
+            foreignKeyName: "ordens_servico_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_mecanico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_servico_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos_mecanico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      [_ in never]: never
+      veiculos_revisao_proxima: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          placa: string
+          marca: string | null
+          modelo: string | null
+          ano: number | null
+          cor: string | null
+          km_atual: number | null
+          km_proxima_revisao: number | null
+          data_proxima_revisao: string | null
+          cliente_nome: string | null
+          alerta: string | null
+        }[]
+      }
+      historico_veiculo: {
+        Args: {
+          p_veiculo_id: string
+        }
+        Returns: {
+          veiculo_id: string
+          placa: string
+          os_id: string
+          numero: number
+          data_entrada: string
+          km_entrada: number | null
+          status: string
+          itens: Json
+          total: number
+        }[]
+      }
+      dashboard_funcionario_mecanico: {
+        Args: {
+          p_user_id: string
+          p_funcionario_id: string
+        }
+        Returns: {
+          metric: string
+          valor: number
+        }[]
+      }
+      dashboard_funcionario_os_por_mes: {
+        Args: {
+          p_user_id: string
+          p_funcionario_id: string
+          p_meses?: number
+        }
+        Returns: {
+          mes: string
+          ano: number
+          total_os: number
+          concluidas: number
+        }[]
+      }
+      relatorio_financeiro_mensal: {
+        Args: {
+          p_user_id: string
+          p_ano?: number
+        }
+        Returns: {
+          mes: number
+          nome_mes: string
+          total_receitas: number
+          total_despesas: number
+          saldo: number
+        }[]
+      }
+      relatorio_financeiro_categorias: {
+        Args: {
+          p_user_id: string
+          p_ano?: number
+          p_mes?: number
+        }
+        Returns: {
+          tipo: string
+          categoria: string
+          total: number
+          quantidade: number
+        }[]
+      }
+      relatorio_estoque_abc: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: {
+          peca_id: string
+          codigo: string | null
+          nome: string
+          quantidade: number
+          preco_venda: number
+          valor_total: number
+          percentual: number
+          percentual_acumulado: number
+          classe: string
+        }[]
+      }
+      relatorio_clientes: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: {
+          cliente_id: string
+          nome: string
+          total_os: number
+          ticket_medio: number
+          total_gasto: number
+          ultima_visita: string | null
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

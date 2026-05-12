@@ -27,10 +27,10 @@ function Page() {
   useEffect(() => { load(); }, []);
   async function load() {
     const [a, c, v, f] = await Promise.all([
-      supabase.from("agendamentos").select("*, clientes(nome), veiculos(placa), funcionarios(nome)").order("data_hora"),
-      supabase.from("clientes").select("id,nome").order("nome"),
-      supabase.from("veiculos").select("id,placa,marca,modelo,cliente_id").order("placa"),
-      supabase.from("funcionarios").select("id,nome").eq("ativo", true),
+      supabase.from("agendamentos_mecanico").select("*, clientes_mecanico(nome), veiculos_mecanico(placa), funcionarios_mecanico(nome)").order("data_hora"),
+      supabase.from("clientes_mecanico").select("id,nome").order("nome"),
+      supabase.from("veiculos_mecanico").select("id,placa,marca,modelo,cliente_id").order("placa"),
+      supabase.from("funcionarios_mecanico").select("id,nome").eq("ativo", true),
     ]);
     setList(a.data ?? []); setClientes(c.data ?? []); setVeiculos(v.data ?? []); setFuncs(f.data ?? []);
   }
@@ -45,17 +45,17 @@ function Page() {
     payload.duracao_min = Number(payload.duracao_min || 60);
     const { data: { user } } = await supabase.auth.getUser();
     payload.user_id = user!.id;
-    const { error } = await supabase.from("agendamentos").insert(payload);
+    const { error } = await supabase.from("agendamentos_mecanico").insert(payload);
     if (error) return toast.error(error.message);
     toast.success("Agendado"); setOpen(false); setClienteId(""); setVeiculoId(""); setFuncId(""); load();
   }
   async function concluir(id: string) {
-    await supabase.from("agendamentos").update({ status: "concluido" }).eq("id", id);
+    await supabase.from("agendamentos_mecanico").update({ status: "concluido" }).eq("id", id);
     load();
   }
   async function remove(id: string) {
     if (!confirm("Excluir agendamento?")) return;
-    await supabase.from("agendamentos").delete().eq("id", id);
+    await supabase.from("agendamentos_mecanico").delete().eq("id", id);
     load();
   }
 
@@ -116,9 +116,9 @@ function Page() {
                     <div className="font-medium">{a.titulo}</div>
                     <div className="text-xs text-muted-foreground mt-1">
                       🕐 {fmtDateTime(a.data_hora)} • {a.duracao_min}min
-                      {a.clientes?.nome && ` • 👤 ${a.clientes.nome}`}
-                      {a.veiculos?.placa && ` • 🚗 ${a.veiculos.placa}`}
-                      {a.funcionarios?.nome && ` • 🔧 ${a.funcionarios.nome}`}
+                      {a.clientes_mecanico?.nome && ` • 👤 ${a.clientes_mecanico.nome}`}
+                      {a.veiculos_mecanico?.placa && ` • 🚗 ${a.veiculos_mecanico.placa}`}
+                      {a.funcionarios_mecanico?.nome && ` • 🔧 ${a.funcionarios_mecanico.nome}`}
                     </div>
                   </div>
                   <Button size="icon" variant="ghost" onClick={() => concluir(a.id)} title="Concluir"><Check className="h-4 w-4 text-success" /></Button>

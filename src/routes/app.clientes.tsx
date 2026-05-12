@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Users, Pencil, Trash2, Search } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Plus, Users, Pencil, Trash2, Search, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
+import { BRL, fmtDate } from "@/lib/format";
 
 export const Route = createFileRoute("/app/clientes")({ component: Page, head: () => ({ meta: [{ title: "Clientes" }] }) });
 
@@ -17,12 +19,33 @@ function Page() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [q, setQ] = useState("");
+  const [tab, setTab] = useState("clientes");
+
+  // Relatório state
+  const [relatorio, setRelatorio] = useState<any[]>([]);
+  const [loadingRel, setLoadingRel] = useState(false);
 
   useEffect(() => { load(); }, []);
   async function load() {
-    const { data } = await supabase.from("clientes").select("*").order("nome");
+    const { data } = await supabase.from("clientes_mecanico").select("*").order("nome");
     setList(data ?? []);
   }
+
+  async function loadRelatorio() {
+    setLoadingRel(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data, error } = await supabase.rpc("relatorio_clientes", { p_user_id: user.id });
+      if (error) toast.error(error.message);
+      setRelatorio(data ?? []);
+    } finally {
+      setLoadingRel(false);
+    }
+  }
+
+  useEffect(() => { if (tab === "relatorio") loadRelatorio(); }, [tab]);
+
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -30,15 +53,15 @@ function Page() {
     const { data: { user } } = await supabase.auth.getUser();
     payload.user_id = user!.id;
     let err;
-    if (editing) ({ error: err } = await supabase.from("clientes").update(payload).eq("id", editing.id));
-    else ({ error: err } = await supabase.from("clientes").insert(payload));
+    if (editing) ({ error: err } = await supabase.from("clientes_mecanico").update(payload).eq("id", editing.id));
+    else ({ error: err } = await supabase.from("clientes_mecanico").insert(payload));
     if (err) return toast.error(err.message);
     toast.success("Cliente salvo");
     setOpen(false); setEditing(null); load();
   }
   async function remove(id: string) {
     if (!confirm("Excluir cliente? Veículos vinculados também serão removidos.")) return;
-    const { error } = await supabase.from("clientes").delete().eq("id", id);
+    const { error } = await supabase.from("clientes_mecanico").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Excluído"); load();
   }
@@ -70,36 +93,78 @@ function Page() {
           </Dialog>
         } />
 
-      <div className="relative mb-4 max-w-md">
-        <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Buscar por nome ou telefone" value={q} onChange={e => setQ(e.target.value)} className="pl-9" />
-      </div>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="clientes">Clientes</TabsTrigger>
+          <TabsTrigger value="relatorio">Relatório</TabsTrigger>
+        </TabsList>
 
-      {filtered.length === 0 ? (
-        <EmptyState icon={Users} title="Nenhum cliente" hint="Cadastre seu primeiro cliente." />
-      ) : (
-        <div className="bg-card border rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-muted text-muted-foreground text-xs uppercase">
-              <tr><th className="text-left px-4 py-3">Nome</th><th className="text-left px-4 py-3">Telefone</th><th className="text-left px-4 py-3 hidden md:table-cell">Email</th><th className="text-left px-4 py-3 hidden md:table-cell">Documento</th><th></th></tr>
-            </thead>
-            <tbody>
-              {filtered.map(c => (
-                <tr key={c.id} className="border-t border-border hover:bg-muted/50">
-                  <td className="px-4 py-3 font-medium">{c.nome}</td>
-                  <td className="px-4 py-3">{c.telefone ?? "—"}</td>
-                  <td className="px-4 py-3 hidden md:table-cell">{c.email ?? "—"}</td>
-                  <td className="px-4 py-3 hidden md:table-cell">{c.documento ?? "—"}</td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <Button size="icon" variant="ghost" onClick={() => { setEditing(c); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => remove(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        <TabsContent value="clientes">
+          <div className="relative mb-4 max-w-md">
+            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Buscar por nome ou telefone" value={q} onChange={e => setQ(e.target.value)} className="pl-9" />
+          </div>
+
+          {filtered.length === 0 ? (
+            <EmptyState icon={Users} title="Nenhum cliente" hint="Cadastre seu primeiro cliente." />
+          ) : (
+            <div className="bg-card border rounded-xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted text-muted-foreground text-xs uppercase">
+                  <tr><th className="text-left px-4 py-3">Nome</th><th className="text-left px-4 py-3">Telefone</th><th className="text-left px-4 py-3 hidden md:table-cell">Email</th><th className="text-left px-4 py-3 hidden md:table-cell">Documento</th><th></th></tr>
+                </thead>
+                <tbody>
+                  {filtered.map(c => (
+                    <tr key={c.id} className="border-t border-border hover:bg-muted/50">
+                      <td className="px-4 py-3 font-medium">{c.nome}</td>
+                      <td className="px-4 py-3">{c.telefone ?? "—"}</td>
+                      <td className="px-4 py-3 hidden md:table-cell">{c.email ?? "—"}</td>
+                      <td className="px-4 py-3 hidden md:table-cell">{c.documento ?? "—"}</td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <Button size="icon" variant="ghost" onClick={() => { setEditing(c); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => remove(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="relatorio">
+          {loadingRel ? (
+            <p className="text-sm text-muted-foreground">Carregando relatório...</p>
+          ) : relatorio.length === 0 ? (
+            <EmptyState icon={BarChart3} title="Sem dados" hint="Cadastre clientes e crie ordens de serviço para gerar o relatório." />
+          ) : (
+            <div className="bg-card border rounded-xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted text-muted-foreground text-xs uppercase">
+                  <tr>
+                    <th className="text-left px-4 py-3">Cliente</th>
+                    <th className="text-right px-4 py-3">Total OS</th>
+                    <th className="text-right px-4 py-3">Ticket Médio</th>
+                    <th className="text-right px-4 py-3">Total Gasto</th>
+                    <th className="text-left px-4 py-3 hidden md:table-cell">Última Visita</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {relatorio.map((r: any) => (
+                    <tr key={r.cliente_id} className="border-t border-border hover:bg-muted/50">
+                      <td className="px-4 py-3 font-medium">{r.nome}</td>
+                      <td className="px-4 py-3 text-right font-mono">{r.total_os}</td>
+                      <td className="px-4 py-3 text-right font-mono text-primary font-semibold">{BRL(r.ticket_medio)}</td>
+                      <td className="px-4 py-3 text-right font-mono">{BRL(r.total_gasto)}</td>
+                      <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{r.ultima_visita ? fmtDate(r.ultima_visita) : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </>
   );
 }

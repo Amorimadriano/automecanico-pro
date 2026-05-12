@@ -20,3 +20,10 @@ export const STATUS_OS: Record<string, { label: string; cls: string }> = {
   concluida: { label: "Concluída", cls: "bg-success/20 text-success border-success/40" },
   cancelada: { label: "Cancelada", cls: "bg-muted text-muted-foreground border-border" },
 };
+
+export const STATUS_ORCAMENTO: Record<string, { label: string; cls: string }> = {
+  pendente: { label: "Pendente", cls: "bg-warning/20 text-warning border-warning/40" },
+  aprovado: { label: "Aprovado", cls: "bg-success/20 text-success border-success/40" },
+  rejeitado: { label: "Rejeitado", cls: "bg-destructive/20 text-destructive border-destructive/40" },
+  convertido: { label: "Convertido", cls: "bg-chart-5/20 text-chart-5 border-chart-5/40" },
+};

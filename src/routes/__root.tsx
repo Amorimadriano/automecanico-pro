@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -29,7 +30,15 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" },
+      { name: "theme-color", content: "#EA580C" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "AutoMec" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "application-name", content: "AutoMecanico Pro" },
+      { name: "msapplication-TileColor", content: "#EA580C" },
+      { name: "msapplication-TileImage", content: "/icon-192x192.svg" },
       { title: "Oficina ERP — Gestão para Mecânicos" },
       { name: "description", content: "Sistema ERP completo para oficinas mecânicas: ordens de serviço, financeiro, agenda, estoque e clientes." },
       { property: "og:title", content: "Oficina ERP — Gestão para Mecânicos" },
@@ -42,6 +51,9 @@ export const Route = createRootRoute({
       { property: "og:type", content: "website" },
     ],
     links: [
+      { rel: "manifest", href: "/manifest.json" },
+      { rel: "apple-touch-icon", sizes: "192x192", href: "/icon-192x192.svg" },
+      { rel: "apple-touch-icon", sizes: "512x512", href: "/icon-512x512.svg" },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
@@ -69,5 +81,31 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/sw.js", { scope: "/" })
+          .then((reg) => {
+            console.log("[PWA] Service Worker registrado:", reg.scope);
+            reg.addEventListener("updatefound", () => {
+              const newWorker = reg.installing;
+              if (newWorker) {
+                newWorker.addEventListener("statechange", () => {
+                  if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+                    console.log("[PWA] Nova versão disponível — recarregando...");
+                    window.location.reload();
+                  }
+                });
+              }
+            });
+          })
+          .catch((err) => {
+            console.error("[PWA] Falha ao registrar Service Worker:", err);
+          });
+      });
+    }
+  }, []);
+
   return <Outlet />;
 }

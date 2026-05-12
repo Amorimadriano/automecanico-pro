@@ -1,6 +1,6 @@
 
--- Clientes
-CREATE TABLE public.clientes (
+-- clientes_oficina
+CREATE TABLE public.clientes_oficina (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
   nome TEXT NOT NULL,
@@ -12,14 +12,14 @@ CREATE TABLE public.clientes (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-ALTER TABLE public.clientes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "own clientes" ON public.clientes FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+ALTER TABLE public.clientes_oficina ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "own clientes_oficina" ON public.clientes_oficina FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- Veículos
 CREATE TABLE public.veiculos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
-  cliente_id UUID NOT NULL REFERENCES public.clientes(id) ON DELETE CASCADE,
+  cliente_id UUID NOT NULL REFERENCES public.clientes_oficina(id) ON DELETE CASCADE,
   placa TEXT NOT NULL,
   marca TEXT,
   modelo TEXT,
@@ -73,7 +73,7 @@ CREATE TABLE public.ordens_servico (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
   numero SERIAL,
-  cliente_id UUID NOT NULL REFERENCES public.clientes(id) ON DELETE RESTRICT,
+  cliente_id UUID NOT NULL REFERENCES public.clientes_oficina(id) ON DELETE RESTRICT,
   veiculo_id UUID NOT NULL REFERENCES public.veiculos(id) ON DELETE RESTRICT,
   funcionario_id UUID REFERENCES public.funcionarios(id) ON DELETE SET NULL,
   status TEXT NOT NULL DEFAULT 'aberta', -- aberta | em_andamento | aguardando_pecas | concluida | cancelada
@@ -116,7 +116,7 @@ CREATE POLICY "own os_itens" ON public.os_itens FOR ALL USING (auth.uid() = user
 CREATE TABLE public.agendamentos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
-  cliente_id UUID REFERENCES public.clientes(id) ON DELETE SET NULL,
+  cliente_id UUID REFERENCES public.clientes_oficina(id) ON DELETE SET NULL,
   veiculo_id UUID REFERENCES public.veiculos(id) ON DELETE SET NULL,
   funcionario_id UUID REFERENCES public.funcionarios(id) ON DELETE SET NULL,
   titulo TEXT NOT NULL,
@@ -153,7 +153,7 @@ CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END; $$;
 
-CREATE TRIGGER tg_clientes_upd BEFORE UPDATE ON public.clientes FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+CREATE TRIGGER tg_clientes_oficina_upd BEFORE UPDATE ON public.clientes_oficina FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 CREATE TRIGGER tg_veiculos_upd BEFORE UPDATE ON public.veiculos FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 CREATE TRIGGER tg_pecas_upd BEFORE UPDATE ON public.pecas FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 CREATE TRIGGER tg_os_upd BEFORE UPDATE ON public.ordens_servico FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();

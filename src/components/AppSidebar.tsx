@@ -1,17 +1,22 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Car, ClipboardList, Package, Calendar, DollarSign, UserCog, LogOut, Wrench } from "lucide-react";
+import { LayoutDashboard, Users, Car, ClipboardList, Package, Calendar, DollarSign, UserCog, LogOut, Wrench, Percent, ShieldCheck, FileText, TrendingUp, Store } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 const items = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { to: "/app/orcamentos", label: "Orçamentos", icon: FileText },
   { to: "/app/os", label: "Ordens de Serviço", icon: ClipboardList },
   { to: "/app/clientes", label: "Clientes", icon: Users },
   { to: "/app/veiculos", label: "Veículos", icon: Car },
   { to: "/app/estoque", label: "Estoque", icon: Package },
+  { to: "/app/fornecedores", label: "Fornecedores", icon: Store },
   { to: "/app/agenda", label: "Agenda", icon: Calendar },
   { to: "/app/funcionarios", label: "Funcionários", icon: UserCog },
+  { to: "/app/comissoes", label: "Comissões", icon: Percent },
+  { to: "/app/garantias", label: "Garantias", icon: ShieldCheck },
   { to: "/app/financeiro", label: "Financeiro", icon: DollarSign },
+  { to: "/app/financeiro-relatorio", label: "Relatório Financeiro", icon: TrendingUp },
 ];
 
 export function AppSidebar() {
@@ -66,7 +71,10 @@ export function AppSidebar() {
 export function MobileBar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 bg-sidebar border-t border-sidebar-border z-40">
+    <nav
+      className="md:hidden fixed bottom-0 inset-x-0 bg-sidebar border-t border-sidebar-border z-40"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       <div className="grid grid-cols-5">
         {items.slice(0, 5).map((it) => {
           const active = it.exact ? path === it.to : path.startsWith(it.to);

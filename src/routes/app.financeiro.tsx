@@ -21,7 +21,7 @@ function Page() {
 
   useEffect(() => { load(); }, []);
   async function load() {
-    const { data } = await supabase.from("financeiro").select("*").order("data_vencimento", { ascending: false });
+    const { data } = await supabase.from("financeiro_mecanico").select("*").order("data_vencimento", { ascending: false });
     setList(data ?? []);
   }
   async function save(e: React.FormEvent<HTMLFormElement>) {
@@ -33,17 +33,17 @@ function Page() {
     payload.pago = false;
     const { data: { user } } = await supabase.auth.getUser();
     payload.user_id = user!.id;
-    const { error } = await supabase.from("financeiro").insert(payload);
+    const { error } = await supabase.from("financeiro_mecanico").insert(payload);
     if (error) return toast.error(error.message);
     toast.success("Lançamento criado"); setOpen(false); load();
   }
   async function pagar(item: any) {
-    await supabase.from("financeiro").update({ pago: !item.pago, data_pagamento: !item.pago ? new Date().toISOString().slice(0, 10) : null }).eq("id", item.id);
+    await supabase.from("financeiro_mecanico").update({ pago: !item.pago, data_pagamento: !item.pago ? new Date().toISOString().slice(0, 10) : null }).eq("id", item.id);
     load();
   }
   async function remove(id: string) {
     if (!confirm("Excluir?")) return;
-    await supabase.from("financeiro").delete().eq("id", id);
+    await supabase.from("financeiro_mecanico").delete().eq("id", id);
     load();
   }
 
