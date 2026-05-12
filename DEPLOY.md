@@ -45,11 +45,22 @@ npm run build
 
 ### 5. Inicie com PM2
 
+#### No VPS Linux (recomendado):
+
 ```bash
 pm2 start server.js --name automecanico
 pm2 save
-pm2 startup
+pm2 startup systemd
 ```
+
+#### No Windows local (teste/desenvolvimento):
+
+```bash
+pm2 start server.js --name automecanico
+pm2 save
+```
+
+> **Nota**: `pm2 startup` nao funciona no Windows porque nao existe systemd/init. No Windows use `pm2 start` normalmente. Para reiniciar automaticamente no boot, configure o PM2 como servico do Windows com `pm2-service-install` ou use o Agendador de Tarefas.
 
 O servidor rodara na porta **3000** por padrao.
 
