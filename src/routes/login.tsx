@@ -114,6 +114,21 @@ function LoginPage() {
   if (loading) return null;
   if (user) return <Navigate to="/app" />;
 
+  const handleResetPassword = async () => {
+    if (!email) {
+      return toast.error("Digite seu email acima para redefinir a senha.");
+    }
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + "/login",
+    });
+    setBusy(false);
+    if (error) {
+      return toast.error(error.message);
+    }
+    toast.success("Email de redefinicao enviado! Verifique sua caixa de entrada.");
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const { limited, remainingSeconds } = checkRateLimit(email);
@@ -211,6 +226,13 @@ function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
+                  <button
+                    type="button"
+                    onClick={handleResetPassword}
+                    className="text-xs text-primary hover:underline mt-1"
+                  >
+                    Esqueci minha senha
+                  </button>
                 </div>
                 {rateLimitRemaining > 0 && (
                   <div className="text-sm text-destructive font-medium">

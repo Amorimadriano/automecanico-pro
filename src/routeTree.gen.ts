@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AssinaturaRouteImport } from './routes/assinatura'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
@@ -39,6 +40,11 @@ const OfflineRoute = OfflineRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssinaturaRoute = AssinaturaRouteImport.update({
+  id: '/assinatura',
+  path: '/assinatura',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -141,6 +147,7 @@ const AppVeiculosIdDiagnosticoRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/assinatura': typeof AssinaturaRoute
   '/login': typeof LoginRoute
   '/offline': typeof OfflineRoute
   '/app/agenda': typeof AppAgendaRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/assinatura': typeof AssinaturaRoute
   '/login': typeof LoginRoute
   '/offline': typeof OfflineRoute
   '/app/agenda': typeof AppAgendaRoute
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/assinatura': typeof AssinaturaRoute
   '/login': typeof LoginRoute
   '/offline': typeof OfflineRoute
   '/app/agenda': typeof AppAgendaRoute
@@ -212,6 +221,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/assinatura'
     | '/login'
     | '/offline'
     | '/app/agenda'
@@ -234,6 +244,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/assinatura'
     | '/login'
     | '/offline'
     | '/app/agenda'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
+    | '/assinatura'
     | '/login'
     | '/offline'
     | '/app/agenda'
@@ -281,6 +293,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  AssinaturaRoute: typeof AssinaturaRoute
   LoginRoute: typeof LoginRoute
   OfflineRoute: typeof OfflineRoute
 }
@@ -299,6 +312,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assinatura': {
+      id: '/assinatura'
+      path: '/assinatura'
+      fullPath: '/assinatura'
+      preLoaderRoute: typeof AssinaturaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -512,6 +532,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  AssinaturaRoute: AssinaturaRoute,
   LoginRoute: LoginRoute,
   OfflineRoute: OfflineRoute,
 }
