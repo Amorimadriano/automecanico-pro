@@ -34,17 +34,26 @@ jobs:
         run: |
           echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" > .env.production
           echo "VITE_SUPABASE_PUBLISHABLE_KEY=${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}" >> .env.production
+          if [ -n "${{ secrets.VITE_MERCADO_PAGO_PUBLIC_KEY }}" ]; then
+            echo "VITE_MERCADO_PAGO_PUBLIC_KEY=${{ secrets.VITE_MERCADO_PAGO_PUBLIC_KEY }}" >> .env.production
+          fi
 
-      - name: Validate secrets
+      - name: Validate required secrets
         run: |
-          if grep -qE "^VITE_SUPABASE_URL=$" .env.production; then
-            echo "ERROR: VITE_SUPABASE_URL is empty"
+          MISSING=0
+          if [ -z "${{ secrets.VITE_SUPABASE_URL }}" ]; then
+            echo "::error::VITE_SUPABASE_URL is missing"
+            MISSING=1
+          fi
+          if [ -z "${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}" ]; then
+            echo "::error::VITE_SUPABASE_PUBLISHABLE_KEY is missing"
+            MISSING=1
+          fi
+          if [ $MISSING -eq 1 ]; then
+            echo "::error::Add missing secrets at: GitHub > Settings > Secrets and variables > Actions"
             exit 1
           fi
-          if grep -qE "^VITE_SUPABASE_PUBLISHABLE_KEY=$" .env.production; then
-            echo "ERROR: VITE_SUPABASE_PUBLISHABLE_KEY is empty"
-            exit 1
-          fi
+          echo "All required secrets present."
 
       - name: Generate env.ts with hardcoded values
         run: |
@@ -52,8 +61,8 @@ jobs:
           export const ENV = {
             VITE_SUPABASE_URL: "${{ secrets.VITE_SUPABASE_URL }}",
             VITE_SUPABASE_PUBLISHABLE_KEY: "${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}",
-            VITE_APP_URL: "${{ secrets.VITE_APP_URL || 'https://motoerp.9ninebusinesscontrol.com.br' }}",
-            VITE_MERCADO_PAGO_PUBLIC_KEY: "${{ secrets.VITE_MERCADO_PAGO_PUBLIC_KEY }}",
+            VITE_APP_URL: "${{ secrets.VITE_APP_URL || 'https://mecanicopro.9ninebusinesscontrol.com.br' }}",
+            VITE_MERCADO_PAGO_PUBLIC_KEY: "${{ secrets.VITE_MERCADO_PAGO_PUBLIC_KEY || '' }}",
           };
           EOF
 
