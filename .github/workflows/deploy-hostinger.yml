@@ -39,6 +39,20 @@ jobs:
           FILE_SIZE=$(stat -c%s "dist/client/index.html")
           echo "index.html: $FILE_SIZE bytes"
 
+      - name: Detect FTP path
+        run: |
+          sudo apt-get install -y lftp
+          lftp -u "u883849716.mecanicopro,Enzo@159753" "ftp.mecanicopro.9ninebusinesscontrol.com.br" <<'EOF'
+          set ssl:verify-certificate no
+          set ftp:ssl-allow no
+          set ftp:passive-mode yes
+          set cmd:fail-exit no
+          !echo "=== Path atual ao conectar ==="
+          pwd
+          ls
+          bye
+          EOF
+
       - name: Deploy to Hostinger via FTP
         run: |
           sudo apt-get install -y lftp
@@ -49,11 +63,13 @@ jobs:
           set net:timeout 180
           set net:max-retries 3
           set cmd:fail-exit no
-          cd public_html/
-          # Remove assets antigos primeiro
-          rm -rf assets
-          rm -f index.html .htaccess registerSW.js sw.js manifest.json icon-*.svg
-          # Upload recursivo (sem verbose para ser mais rapido)
+          # Path do dominio adicional na Hostinger
+          cd /domains/mecanicopro.9ninebusinesscontrol.com.br/public_html || cd domains/mecanicopro.9ninebusinesscontrol.com.br/public_html || true
+          ls || true
+          # Remove arquivos antigos
+          rm -rf assets || true
+          rm -f index.html .htaccess registerSW.js sw.js manifest.json icon-*.svg || true
+          # Upload recursivo
           lcd ./dist/client
           mirror -R --no-perms --parallel=3 .
           bye
