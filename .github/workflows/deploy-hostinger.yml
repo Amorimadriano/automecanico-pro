@@ -21,23 +21,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
-
-      - name: Cache Bun dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ hashFiles('**/bun.lockb', '**/package.json') }}
-          restore-keys: bun-
+          node-version: 22
+          cache: 'npm'
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm install
 
       - name: Build production
-        run: bun run build
+        run: npm run build
+
+      - name: Generate static index.html
+        run: |
+          PORT=3001 node server.js &
+          SERVER_PID=$!
+          sleep 5
+          curl -s http://localhost:3001/ > dist/client/index.html
+          kill $SERVER_PID || true
 
       - name: Deploy to Hostinger via FTP (lftp)
         run: |
@@ -51,19 +53,24 @@ jobs:
           cd /home/u883849716/domains/mecanicopro.9ninebusinesscontrol.com.br/public_html/
           # Remove arquivos antigos (ignora erros se nao existirem)
           rm -f index.html
-          rm -f *.js
-          rm -f *.css
+          rm -f .htaccess
+          rm -f registerSW.js
+          rm -f sw.js
+          rm -f manifest.json
+          rm -f icon-*.svg
           rm -rf assets
-          # Cria diretorio assets
-          mkdir assets
-          # Sobe index.html
-          lcd ./dist
+          # Sobe tudo de dist/client/
+          lcd ./dist/client
           put index.html
-          # Sobe arquivos da raiz
-          mput *.js
-          mput *.css
+          put .htaccess
+          put registerSW.js
+          put sw.js
+          put manifest.json
+          put icon-192x192.svg
+          put icon-512x512.svg
           # Sobe assets
-          lcd ./dist/assets
+          mkdir assets
+          lcd ./dist/client/assets
           cd assets
           mput *
           bye
