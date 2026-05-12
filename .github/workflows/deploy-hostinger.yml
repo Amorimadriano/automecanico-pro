@@ -3,15 +3,6 @@ name: Deploy to Hostinger
 on:
   push:
     branches: [main]
-    paths:
-      - 'src/**'
-      - 'public/**'
-      - 'index.html'
-      - 'vite.config.ts'
-      - 'package.json'
-      - 'tsconfig.json'
-      - 'tailwind.config.ts'
-      - '.github/workflows/deploy-hostinger.yml'
   workflow_dispatch:
 
 jobs:
@@ -76,11 +67,8 @@ jobs:
           set net:timeout 120
           set cmd:fail-exit no
           set ftp:list-empty-ok yes
-          # Path relativo - cPanel geralmente abre direto no home do usuario
           cd public_html/
-          # Lista arquivos atuais
           ls
-          # Remove arquivos antigos
           rm -f index.html
           rm -f .htaccess
           rm -f registerSW.js
@@ -88,7 +76,6 @@ jobs:
           rm -f manifest.json
           rm -f icon-*.svg
           rm -rf assets
-          # Sobe arquivos da raiz
           lcd ./dist/client
           put index.html
           put .htaccess
@@ -97,12 +84,10 @@ jobs:
           put manifest.json
           put icon-192x192.svg
           put icon-512x512.svg
-          # Sobe assets
           mkdir assets
           lcd ./dist/client/assets
           cd assets
           mput *
-          # Lista arquivos apos upload
           cd ..
           ls
           bye

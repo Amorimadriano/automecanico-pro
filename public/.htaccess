@@ -1,5 +1,6 @@
 DirectoryIndex index.html
 
+# SPA fallback - redireciona rotas para index.html
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteCond %{REQUEST_FILENAME} !-f
