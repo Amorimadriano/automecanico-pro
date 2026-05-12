@@ -1,9 +1,19 @@
 DirectoryIndex index.html
 
-# SPA fallback - redireciona rotas para index.html
+# Nao reescrever arquivos e diretorios reais
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
+
+  # Se for um arquivo real (JS, CSS, imagem, etc), nao reescrever
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Nao reescrever assets, API, ou arquivos com extensao conhecida
+  RewriteCond %{REQUEST_URI} !^/assets/
+  RewriteCond %{REQUEST_URI} !^/api/
+  RewriteCond %{REQUEST_URI} !\.(js|css|svg|png|jpg|jpeg|gif|ico|woff|woff2|ttf|eot|json|xml|txt)$ [NC]
+
+  # Redireciona tudo para index.html
   RewriteRule ^ index.html [L]
 </IfModule>
