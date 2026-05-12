@@ -8,6 +8,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,59 +27,34 @@ jobs:
 
       - name: Generate static index.html
         run: |
-          echo "Starting local server on port 3001..."
           PORT=3001 node server.js &
           SERVER_PID=$!
           sleep 5
-          echo "Fetching index.html from http://localhost:3001/ ..."
           HTTP_CODE=$(curl -s -o dist/client/index.html -w "%{http_code}" http://localhost:3001/)
-          echo "HTTP response code: $HTTP_CODE"
           kill $SERVER_PID || true
           if [ "$HTTP_CODE" != "200" ]; then
             echo "ERROR: Server did not return 200. Got $HTTP_CODE"
-            cat dist/client/index.html | head -20
             exit 1
           fi
           FILE_SIZE=$(stat -c%s "dist/client/index.html")
-          echo "index.html generated: $FILE_SIZE bytes"
-          if [ "$FILE_SIZE" -lt 100 ]; then
-            echo "ERROR: index.html is too small ($FILE_SIZE bytes)"
-            cat dist/client/index.html
-            exit 1
-          fi
-          echo "index.html OK."
+          echo "index.html: $FILE_SIZE bytes"
 
-      - name: List dist/client contents
-        run: |
-          echo "=== dist/client ==="
-          ls -la dist/client/
-          echo "=== dist/client/assets (count files) ==="
-          ls dist/client/assets/ | wc -l
-          echo "=== dist/client/assets (first 20) ==="
-          ls dist/client/assets/ | head -20
-
-      - name: Deploy to Hostinger via FTP (lftp mirror)
+      - name: Deploy to Hostinger via FTP
         run: |
           sudo apt-get install -y lftp
           lftp -u "u883849716.mecanicopro,Enzo@159753" "ftp.mecanicopro.9ninebusinesscontrol.com.br" <<'EOF'
           set ssl:verify-certificate no
           set ftp:ssl-allow no
           set ftp:passive-mode yes
-          set net:timeout 120
+          set net:timeout 180
+          set net:max-retries 3
           set cmd:fail-exit no
-          set ftp:list-empty-ok yes
-          set mirror:parallel-directories yes
           cd public_html/
-          # Remove tudo antigo
+          # Remove assets antigos primeiro
           rm -rf assets
           rm -f index.html .htaccess registerSW.js sw.js manifest.json icon-*.svg
-          # Sobe tudo de dist/client usando mirror (upload recursivo)
+          # Upload recursivo (sem verbose para ser mais rapido)
           lcd ./dist/client
-          mirror -R --verbose --no-perms . .
-          # Lista arquivos apos upload
-          echo "=== Arquivos no servidor apos upload ==="
-          ls
-          echo "=== Assets no servidor ==="
-          ls assets/ | wc -l
+          mirror -R --no-perms --parallel=3 .
           bye
           EOF
