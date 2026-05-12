@@ -35,11 +35,36 @@ jobs:
 
       - name: Generate static index.html
         run: |
+          echo "Starting local server on port 3001..."
           PORT=3001 node server.js &
           SERVER_PID=$!
           sleep 5
-          curl -s http://localhost:3001/ > dist/client/index.html
+          echo "Fetching index.html from http://localhost:3001/ ..."
+          HTTP_CODE=$(curl -s -o dist/client/index.html -w "%{http_code}" http://localhost:3001/)
+          echo "HTTP response code: $HTTP_CODE"
           kill $SERVER_PID || true
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "ERROR: Server did not return 200. Got $HTTP_CODE"
+            cat dist/client/index.html | head -20
+            exit 1
+          fi
+          FILE_SIZE=$(stat -c%s "dist/client/index.html")
+          echo "index.html generated: $FILE_SIZE bytes"
+          if [ "$FILE_SIZE" -lt 100 ]; then
+            echo "ERROR: index.html is too small ($FILE_SIZE bytes)"
+            cat dist/client/index.html
+            exit 1
+          fi
+          echo "index.html OK. First 200 chars:"
+          head -c 200 dist/client/index.html
+          echo ""
+
+      - name: List dist/client contents
+        run: |
+          echo "=== dist/client ==="
+          ls -la dist/client/
+          echo "=== dist/client/assets ==="
+          ls -la dist/client/assets/
 
       - name: Deploy to Hostinger via FTP (lftp)
         run: |
@@ -50,8 +75,12 @@ jobs:
           set ftp:passive-mode yes
           set net:timeout 120
           set cmd:fail-exit no
-          cd /home/u883849716/domains/mecanicopro.9ninebusinesscontrol.com.br/public_html/
-          # Remove arquivos antigos (ignora erros se nao existirem)
+          set ftp:list-empty-ok yes
+          # Path relativo - cPanel geralmente abre direto no home do usuario
+          cd public_html/
+          # Lista arquivos atuais
+          ls
+          # Remove arquivos antigos
           rm -f index.html
           rm -f .htaccess
           rm -f registerSW.js
@@ -59,7 +88,7 @@ jobs:
           rm -f manifest.json
           rm -f icon-*.svg
           rm -rf assets
-          # Sobe tudo de dist/client/
+          # Sobe arquivos da raiz
           lcd ./dist/client
           put index.html
           put .htaccess
@@ -73,5 +102,8 @@ jobs:
           lcd ./dist/client/assets
           cd assets
           mput *
+          # Lista arquivos apos upload
+          cd ..
+          ls
           bye
           EOF

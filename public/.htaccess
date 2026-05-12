@@ -1,27 +1,13 @@
-# Apache rewrite rules for SPA (Single Page Application)
-# Todas as rotas caem no index.html para o React Router gerenciar
+DirectoryIndex index.html
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
-
-  # Nao reescrever arquivos e diretorios reais
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-
-  # Redirecionar tudo para index.html
   RewriteRule . /index.html [L]
 </IfModule>
 
-# Compressao GZIP para assets
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/css application/javascript
-</IfModule>
-
-# Cache para assets estaticos
-<IfModule mod_expires.c>
-  ExpiresActive On
-  ExpiresByType application/javascript "access plus 1 year"
-  ExpiresByType text/css "access plus 1 year"
-  ExpiresByType image/svg+xml "access plus 1 year"
 </IfModule>
