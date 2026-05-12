@@ -1,8 +1,5 @@
 DirectoryIndex index.html
 
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^ index.html [L]
-</IfModule>
+# SPA fallback: quando um arquivo nao existe, serve index.html
+# Isso funciona para rotas do React Router sem mod_rewrite
+ErrorDocument 404 /index.html
