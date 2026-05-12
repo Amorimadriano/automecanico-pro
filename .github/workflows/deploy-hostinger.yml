@@ -46,18 +46,18 @@ jobs:
             cat dist/client/index.html
             exit 1
           fi
-          echo "index.html OK. First 200 chars:"
-          head -c 200 dist/client/index.html
-          echo ""
+          echo "index.html OK."
 
       - name: List dist/client contents
         run: |
           echo "=== dist/client ==="
           ls -la dist/client/
-          echo "=== dist/client/assets ==="
-          ls -la dist/client/assets/
+          echo "=== dist/client/assets (count files) ==="
+          ls dist/client/assets/ | wc -l
+          echo "=== dist/client/assets (first 20) ==="
+          ls dist/client/assets/ | head -20
 
-      - name: Deploy to Hostinger via FTP (lftp)
+      - name: Deploy to Hostinger via FTP (lftp mirror)
         run: |
           sudo apt-get install -y lftp
           lftp -u "u883849716.mecanicopro,Enzo@159753" "ftp.mecanicopro.9ninebusinesscontrol.com.br" <<'EOF'
@@ -67,28 +67,18 @@ jobs:
           set net:timeout 120
           set cmd:fail-exit no
           set ftp:list-empty-ok yes
+          set mirror:parallel-directories yes
           cd public_html/
-          ls
-          rm -f index.html
-          rm -f .htaccess
-          rm -f registerSW.js
-          rm -f sw.js
-          rm -f manifest.json
-          rm -f icon-*.svg
+          # Remove tudo antigo
           rm -rf assets
+          rm -f index.html .htaccess registerSW.js sw.js manifest.json icon-*.svg
+          # Sobe tudo de dist/client usando mirror (upload recursivo)
           lcd ./dist/client
-          put index.html
-          put .htaccess
-          put registerSW.js
-          put sw.js
-          put manifest.json
-          put icon-192x192.svg
-          put icon-512x512.svg
-          mkdir assets
-          lcd ./dist/client/assets
-          cd assets
-          mput *
-          cd ..
+          mirror -R --verbose --no-perms . .
+          # Lista arquivos apos upload
+          echo "=== Arquivos no servidor apos upload ==="
           ls
+          echo "=== Assets no servidor ==="
+          ls assets/ | wc -l
           bye
           EOF
