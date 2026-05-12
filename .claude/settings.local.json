@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "Bash(npx get-shit-done-cc@latest --help)",
+      "Bash(npx get-shit-done-cc *)",
+      "Bash(git *)",
+      "Bash(node *)",
+      "Bash(Get-ChildItem -Path \".\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(npx supabase *)",
+      "Bash(npx prettier *)",
+      "Bash(Get-ChildItem *)",
+      "Bash(python -c \"import cairosvg; print\\('cairosvg ok'\\)\")",
+      "Bash(python -c \"from PIL import Image; print\\('pillow ok'\\)\")",
+      "Bash(npm install *)",
+      "Bash(npm ls *)",
+      "Bash(npx wrangler *)",
+      "Bash(Remove-Item \"supabase/migrations/20260501210658_b74095f8-00f5-4126-a8ba-3c555f391dc0.sql\" -Force)",
+      "Bash(Remove-Item \"supabase/migrations/20260501210721_10d8b9bb-1982-4677-9ef1-113506e72aff.sql\" -Force)"
+    ]
+  }
+}
