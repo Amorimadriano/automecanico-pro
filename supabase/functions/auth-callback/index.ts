@@ -1,10 +1,13 @@
 // Edge Function: auth-callback
 // Recebe o token de recuperação do Supabase e redireciona para o domínio correto
-// Isso resolve o problema de múltiplos domínios compartilhando o mesmo projeto Supabase
+// Resolve o problema de múltiplos domínios compartilhando o mesmo projeto Supabase.
+//
+// IMPORTANTE: O Supabase Auth envia os tokens no hash (#access_token=...).
+// Hash NÃO é enviada ao servidor, então esta função retorna HTML que lê
+// window.location.hash no navegador e faz redirect client-side.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-// Domínios autorizados (whitelist)
 const ALLOWED_DOMAINS = [
   "https://mecanicopro.9ninebusinesscontrol.com.br",
   "https://9ninebusinesscontrol.com.br",
@@ -15,37 +18,69 @@ const ALLOWED_DOMAINS = [
 
 serve(async (req) => {
   const url = new URL(req.url);
-
-  // Pega o domínio final para onde devemos redirecionar
   const finalRedirect = url.searchParams.get("final_redirect");
   const finalRedirectUrl = finalRedirect ? new URL(finalRedirect) : null;
 
-  // Valida se o domínio está na whitelist
-  const isAllowed = finalRedirectUrl && ALLOWED_DOMAINS.some((domain) =>
-    finalRedirectUrl.origin === domain || finalRedirectUrl.href.startsWith(domain)
-  );
+  const isAllowed =
+    finalRedirectUrl &&
+    ALLOWED_DOMAINS.some(
+      (domain) =>
+        finalRedirectUrl.origin === domain ||
+        finalRedirectUrl.href.startsWith(domain)
+    );
 
   if (!isAllowed) {
     return new Response(
-      `Domínio não autorizado: ${finalRedirectUrl?.origin || "não informado"}. ` +
-      `Domínios permitidos: ${ALLOWED_DOMAINS.join(", ")}`,
-      { status: 400, headers: { "content-type": "text/plain; charset=utf-8" } }
+      `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>Erro</title></head>
+<body>
+  <h1>Domínio não autorizado</h1>
+  <p>${finalRedirectUrl?.origin || "não informado"}</p>
+  <p>Domínios permitidos: ${ALLOWED_DOMAINS.join(", ")}</p>
+</body>
+</html>`,
+      { status: 400, headers: { "content-type": "text/html; charset=utf-8" } }
     );
   }
 
-  // O Supabase envia os tokens no hash (#access_token=...) ou query (?code=...)
-  // Quando o Supabase redireciona para esta função, ele mantém a hash na URL
-  // Precisamos repassar tudo para o domínio final
+  // Retorna HTML que faz redirect client-side preservando a hash (#access_token=...)
+  const target = finalRedirectUrl.href;
 
-  const target = new URL(finalRedirectUrl.href);
-  target.search = url.search;
-  target.hash = url.hash;
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Redirecionando...</title>
+  <style>
+    body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #0a0a0a; color: #e5e5e5; }
+    .box { text-align: center; }
+    .spinner { width: 40px; height: 40px; border: 3px solid #333; border-top-color: #EA580C; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="spinner"></div>
+    <p>Redirecionando...</p>
+  </div>
+  <script>
+    (function() {
+      var target = ${JSON.stringify(target)};
+      var hash = window.location.hash;
+      var dest = target + hash;
+      window.location.replace(dest);
+    })();
+  </script>
+</body>
+</html>`;
 
-  return new Response(null, {
-    status: 302,
+  return new Response(html, {
+    status: 200,
     headers: {
-      "Location": target.href,
-      "Cache-Control": "no-store, no-cache, must-revalidate",
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store, no-cache, must-revalidate",
     },
   });
 });
