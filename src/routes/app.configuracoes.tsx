@@ -107,9 +107,9 @@ function ConfiguracoesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl">Configurações</h1>
+          <h1 className="font-display text-2xl">Administração de Assinaturas</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Gerenciamento de usuários e assinaturas
+            Gerenciamento de usuários e controle de acesso
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm text-primary">

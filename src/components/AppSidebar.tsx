@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Car, ClipboardList, Package, Calendar, DollarSign, UserCog, LogOut, Wrench, Percent, ShieldCheck, FileText, TrendingUp, Store, Settings } from "lucide-react";
+import { LayoutDashboard, Users, Car, ClipboardList, Package, Calendar, DollarSign, UserCog, LogOut, Wrench, Percent, ShieldCheck, FileText, TrendingUp, Store, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -65,8 +65,8 @@ export function AppSidebar() {
                 : "text-sidebar-foreground hover:bg-sidebar-accent"
             )}
           >
-            <Settings className="h-4 w-4" />
-            Configurações
+            <Shield className="h-4 w-4" />
+            Administração
           </Link>
         )}
       </nav>
@@ -87,7 +87,7 @@ export function AppSidebar() {
 export function MobileBar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { isAdmin } = useAuth();
-  const mobileItems = [...items.slice(0, 4), ...(isAdmin ? [{ to: "/app/configuracoes", label: "Config", icon: Settings }] : [{ to: "/app/financeiro", label: "Financeiro", icon: DollarSign }])];
+  const mobileItems = [...items.slice(0, 4), ...(isAdmin ? [{ to: "/app/configuracoes", label: "Admin", icon: Shield }] : [{ to: "/app/financeiro", label: "Financeiro", icon: DollarSign }])];
 
   return (
     <nav
