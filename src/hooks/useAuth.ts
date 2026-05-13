@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,5 +21,20 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  return { session, user, loading };
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    supabase
+      .from("assinaturas_mecanico")
+      .select("role")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        setIsAdmin(data?.role === "admin");
+      });
+  }, [user]);
+
+  return { session, user, isAdmin, loading };
 }

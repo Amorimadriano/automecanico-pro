@@ -23,6 +23,7 @@ import { Route as AppFornecedoresRouteImport } from './routes/app.fornecedores'
 import { Route as AppFinanceiroRelatorioRouteImport } from './routes/app.financeiro-relatorio'
 import { Route as AppFinanceiroRouteImport } from './routes/app.financeiro'
 import { Route as AppEstoqueRouteImport } from './routes/app.estoque'
+import { Route as AppConfiguracoesRouteImport } from './routes/app.configuracoes'
 import { Route as AppComissoesRouteImport } from './routes/app.comissoes'
 import { Route as AppClientesRouteImport } from './routes/app.clientes'
 import { Route as AppAgendaRouteImport } from './routes/app.agenda'
@@ -102,6 +103,11 @@ const AppEstoqueRoute = AppEstoqueRouteImport.update({
   path: '/estoque',
   getParentRoute: () => AppRoute,
 } as any)
+const AppConfiguracoesRoute = AppConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppComissoesRoute = AppComissoesRouteImport.update({
   id: '/comissoes',
   path: '/comissoes',
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/app/agenda': typeof AppAgendaRoute
   '/app/clientes': typeof AppClientesRoute
   '/app/comissoes': typeof AppComissoesRoute
+  '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/estoque': typeof AppEstoqueRoute
   '/app/financeiro': typeof AppFinanceiroRoute
   '/app/financeiro-relatorio': typeof AppFinanceiroRelatorioRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByTo {
   '/app/agenda': typeof AppAgendaRoute
   '/app/clientes': typeof AppClientesRoute
   '/app/comissoes': typeof AppComissoesRoute
+  '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/estoque': typeof AppEstoqueRoute
   '/app/financeiro': typeof AppFinanceiroRoute
   '/app/financeiro-relatorio': typeof AppFinanceiroRelatorioRoute
@@ -201,6 +209,7 @@ export interface FileRoutesById {
   '/app/agenda': typeof AppAgendaRoute
   '/app/clientes': typeof AppClientesRoute
   '/app/comissoes': typeof AppComissoesRoute
+  '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/estoque': typeof AppEstoqueRoute
   '/app/financeiro': typeof AppFinanceiroRoute
   '/app/financeiro-relatorio': typeof AppFinanceiroRelatorioRoute
@@ -227,6 +236,7 @@ export interface FileRouteTypes {
     | '/app/agenda'
     | '/app/clientes'
     | '/app/comissoes'
+    | '/app/configuracoes'
     | '/app/estoque'
     | '/app/financeiro'
     | '/app/financeiro-relatorio'
@@ -250,6 +260,7 @@ export interface FileRouteTypes {
     | '/app/agenda'
     | '/app/clientes'
     | '/app/comissoes'
+    | '/app/configuracoes'
     | '/app/estoque'
     | '/app/financeiro'
     | '/app/financeiro-relatorio'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/app/agenda'
     | '/app/clientes'
     | '/app/comissoes'
+    | '/app/configuracoes'
     | '/app/estoque'
     | '/app/financeiro'
     | '/app/financeiro-relatorio'
@@ -398,6 +410,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEstoqueRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/configuracoes': {
+      id: '/app/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/app/configuracoes'
+      preLoaderRoute: typeof AppConfiguracoesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/comissoes': {
       id: '/app/comissoes'
       path: '/comissoes'
@@ -497,6 +516,7 @@ interface AppRouteChildren {
   AppAgendaRoute: typeof AppAgendaRoute
   AppClientesRoute: typeof AppClientesRoute
   AppComissoesRoute: typeof AppComissoesRoute
+  AppConfiguracoesRoute: typeof AppConfiguracoesRoute
   AppEstoqueRoute: typeof AppEstoqueRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppFinanceiroRelatorioRoute: typeof AppFinanceiroRelatorioRoute
@@ -514,6 +534,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAgendaRoute: AppAgendaRoute,
   AppClientesRoute: AppClientesRoute,
   AppComissoesRoute: AppComissoesRoute,
+  AppConfiguracoesRoute: AppConfiguracoesRoute,
   AppEstoqueRoute: AppEstoqueRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
   AppFinanceiroRelatorioRoute: AppFinanceiroRelatorioRoute,

@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Car, ClipboardList, Package, Calendar, DollarSign, UserCog, LogOut, Wrench, Percent, ShieldCheck, FileText, TrendingUp, Store } from "lucide-react";
+import { LayoutDashboard, Users, Car, ClipboardList, Package, Calendar, DollarSign, UserCog, LogOut, Wrench, Percent, ShieldCheck, FileText, TrendingUp, Store, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 const items = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -21,6 +22,7 @@ const items = [
 
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const { isAdmin } = useAuth();
 
   return (
     <aside className="hidden md:flex md:w-64 flex-col bg-sidebar border-r border-sidebar-border min-h-screen sticky top-0">
@@ -53,6 +55,20 @@ export function AppSidebar() {
             </Link>
           );
         })}
+        {isAdmin && (
+          <Link
+            to="/app/configuracoes"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all",
+              path.startsWith("/app/configuracoes")
+                ? "bg-gradient-primary text-primary-foreground shadow-glow"
+                : "text-sidebar-foreground hover:bg-sidebar-accent"
+            )}
+          >
+            <Settings className="h-4 w-4" />
+            Configurações
+          </Link>
+        )}
       </nav>
 
       <div className="p-3 border-t border-sidebar-border">
@@ -70,14 +86,17 @@ export function AppSidebar() {
 
 export function MobileBar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const { isAdmin } = useAuth();
+  const mobileItems = [...items.slice(0, 4), ...(isAdmin ? [{ to: "/app/configuracoes", label: "Config", icon: Settings }] : [{ to: "/app/financeiro", label: "Financeiro", icon: DollarSign }])];
+
   return (
     <nav
       className="md:hidden fixed bottom-0 inset-x-0 bg-sidebar border-t border-sidebar-border z-40"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="grid grid-cols-5">
-        {items.slice(0, 5).map((it) => {
-          const active = it.exact ? path === it.to : path.startsWith(it.to);
+        {mobileItems.map((it) => {
+          const active = (it as any).exact ? path === it.to : path.startsWith(it.to);
           return (
             <Link key={it.to} to={it.to} className={cn("flex flex-col items-center gap-1 py-2 text-[10px]", active ? "text-primary" : "text-muted-foreground")}>
               <it.icon className="h-5 w-5" />
