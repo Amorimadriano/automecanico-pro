@@ -71,8 +71,7 @@ function ConfiguracoesPage() {
       .upsert({
         user_id: user!.id,
         ...empresa,
-      })
-      .eq("user_id", user!.id);
+      }, { onConflict: "user_id" });
     setSalvando(false);
     if (error) {
       toast.error("Erro ao salvar: " + error.message);
