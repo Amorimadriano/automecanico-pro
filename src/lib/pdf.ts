@@ -1,8 +1,46 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import QRCode from "qrcode";
 import { BRL, fmtDate } from "./format";
 
-export function gerarOSPdf(os: any, cliente: any, veiculo: any, itens: any[], funcionario?: any, empresa?: any) {
+// Gera payload Pix EMVCo estático
+function gerarPayloadPix(chave: string, valor: number, descricao: string): string {
+  const pad = (id: string, val: string) => {
+    const len = val.length.toString().padStart(2, "0");
+    return id + len + val;
+  };
+
+  const merchantAccount = pad("00", "br.gov.bcb.pix") + pad("01", chave);
+  const txid = pad("05", "***");
+  const amount = valor > 0 ? pad("54", valor.toFixed(2)) : "";
+
+  const payload =
+    pad("00", "01") +
+    pad("26", merchantAccount) +
+    pad("52", "0000") +
+    pad("53", "986") +
+    amount +
+    pad("58", "BR") +
+    pad("62", txid) +
+    "6304";
+
+  // CRC16
+  function crc16(str: string): string {
+    let crc = 0xffff;
+    for (let i = 0; i < str.length; i++) {
+      crc ^= str.charCodeAt(i) << 8;
+      for (let j = 0; j < 8; j++) {
+        crc = (crc & 0x8000) !== 0 ? (crc << 1) ^ 0x1021 : crc << 1;
+        crc &= 0xffff;
+      }
+    }
+    return crc.toString(16).toUpperCase().padStart(4, "0");
+  }
+
+  return payload + crc16(payload);
+}
+
+export async function gerarOSPdf(os: any, cliente: any, veiculo: any, itens: any[], funcionario?: any, empresa?: any) {
   const doc = new jsPDF();
   const pageW = doc.internal.pageSize.getWidth();
 
@@ -88,11 +126,32 @@ export function gerarOSPdf(os: any, cliente: any, veiculo: any, itens: any[], fu
   doc.text(`TOTAL: ${BRL(os.total)}`, xR, finalY + 18, { align: "right" });
 
   let footerY = doc.internal.pageSize.getHeight() - 12;
-  if (empresa?.chave_pix) {
-    doc.setTextColor(234, 88, 12); doc.setFontSize(9); doc.setFont("helvetica", "bold");
-    doc.text(`Pagamento via Pix: ${empresa.chave_pix}`, pageW / 2, footerY, { align: "center" });
-    footerY -= 5;
+
+  // QR Code Pix
+  if (empresa?.chave_pix && Number(os.total) > 0) {
+    try {
+      const payload = gerarPayloadPix(empresa.chave_pix, Number(os.total), `OS #${os.numero}`);
+      const dataUrl = await QRCode.toDataURL(payload, { width: 150, margin: 1 });
+      const qrSize = 35;
+      const qrX = 14;
+      const qrY = doc.internal.pageSize.getHeight() - 55;
+      doc.addImage(dataUrl, "PNG", qrX, qrY, qrSize, qrSize);
+
+      doc.setTextColor(40); doc.setFontSize(8); doc.setFont("helvetica", "bold");
+      doc.text("Pague com Pix", qrX, qrY - 3);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Chave: ${empresa.chave_pix}`, qrX + qrSize + 4, qrY + 10);
+      doc.text(`Valor: ${BRL(os.total)}`, qrX + qrSize + 4, qrY + 15);
+
+      footerY = qrY - 6;
+    } catch {
+      // fallback: texto apenas
+      doc.setTextColor(234, 88, 12); doc.setFontSize(9); doc.setFont("helvetica", "bold");
+      doc.text(`Pagamento via Pix: ${empresa.chave_pix}`, pageW / 2, footerY, { align: "center" });
+      footerY -= 5;
+    }
   }
+
   doc.setTextColor(120); doc.setFontSize(8); doc.setFont("helvetica", "normal");
   doc.text(empresa?.nome_fantasia || empresa?.razao_social || "Oficina ERP", pageW / 2, footerY, { align: "center" });
 

@@ -259,7 +259,7 @@ function Page() {
           <ArrowLeft className="h-4 w-4 mr-1" />Voltar
         </Link>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => gerarOSPdf(os, cliente, veiculo, itens, funcionario, empresa)}>
+          <Button variant="outline" onClick={async () => { await gerarOSPdf(os, cliente, veiculo, itens, funcionario, empresa); }}>
             <FileDown className="h-4 w-4 mr-2" />PDF
           </Button>
           {!os.pago && os.status === "concluida" && (
@@ -483,7 +483,7 @@ function Page() {
                   <CheckCircle2 className="h-4 w-4 mr-2" />Concluir OS
                 </Button>
               )}
-              <Button variant="outline" className="w-full" onClick={() => gerarOSPdf(os, cliente, veiculo, itens, funcionario)}>
+              <Button variant="outline" className="w-full" onClick={async () => { await gerarOSPdf(os, cliente, veiculo, itens, funcionario, empresa); }}>
                 <FileDown className="h-4 w-4 mr-2" />Baixar orçamento PDF
               </Button>
               <Button variant="ghost" className="w-full text-destructive hover:text-destructive" onClick={excluirOS}>
