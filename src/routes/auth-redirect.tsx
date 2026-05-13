@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth-redirect")({
   component: AuthRedirectPage,
@@ -25,22 +26,47 @@ function AuthRedirectPage() {
       "http://localhost:3001",
       "http://localhost:5173",
     ];
-    const targetUrl = new URL(finalRedirect);
+    const destUrl = new URL(finalRedirect);
     const isAllowed = allowedDomains.some(
-      (d) => targetUrl.origin === d || targetUrl.href.startsWith(d)
+      (d) => destUrl.origin === d || destUrl.href.startsWith(d)
     );
 
     if (!isAllowed) {
-      setError(`Domínio não autorizado: ${targetUrl.origin}`);
+      setError(`Domínio não autorizado: ${destUrl.origin}`);
       return;
     }
 
-    // Preserva a hash (#access_token=...) que o Supabase envia
-    const hash = window.location.hash;
-    const dest = finalRedirect + hash;
+    const code = url.searchParams.get("code");
+    const type = url.searchParams.get("type");
 
-    // Redireciona imediatamente
-    window.location.replace(dest);
+    // Se Supabase enviou PKCE code, tenta trocar por sessão no domínio atual (mecanicopro).
+    // Se funcionar, redireciona para o destino com tokens na hash.
+    // Se falhar (code verifier não disponível), repassa o code como query param.
+    if (code && type === "recovery") {
+      supabase.auth
+        .exchangeCodeForSession(code)
+        .then(({ data, error: exchangeErr }) => {
+          if (exchangeErr || !data.session) {
+            console.error("[auth-redirect] exchangeCodeForSession failed:", exchangeErr);
+            // Repassa o code para o destino tentar trocar lá
+            destUrl.searchParams.set("code", code);
+            destUrl.searchParams.set("type", type);
+            window.location.replace(destUrl.toString());
+            return;
+          }
+          // Troca ok: redireciona com tokens na hash
+          const hash =
+            `#access_token=${encodeURIComponent(data.session.access_token)}` +
+            `&refresh_token=${encodeURIComponent(data.session.refresh_token)}` +
+            `&type=recovery`;
+          window.location.replace(finalRedirect + hash);
+        });
+      return;
+    }
+
+    // Fluxo implícito: repassa hash com tokens (access_token, refresh_token)
+    const hash = window.location.hash;
+    window.location.replace(finalRedirect + hash);
   }, []);
 
   if (error) {

@@ -20,13 +20,30 @@ function ResetPasswordPage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Supabase envia o token no hash da URL (#access_token=...&type=recovery)
-    // ou como query param (?code=...)
+    const url = new URL(window.location.href);
+
+    // Fluxo PKCE: Supabase envia ?code=xxx&type=recovery
+    const code = url.searchParams.get("code");
+    const type = url.searchParams.get("type");
+    if (code && type === "recovery") {
+      supabase.auth
+        .exchangeCodeForSession(code)
+        .then(({ error }) => {
+          if (error) {
+            toast.error("Link de recuperação inválido ou expirado.");
+          } else {
+            setReady(true);
+          }
+        });
+      return;
+    }
+
+    // Fluxo implícito: Supabase envia #access_token=...&refresh_token=...
     const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const accessToken = params.get("access_token");
-    const refreshToken = params.get("refresh_token");
-    const type = params.get("type");
+    const hashParams = new URLSearchParams(hash);
+    const accessToken = hashParams.get("access_token");
+    const refreshToken = hashParams.get("refresh_token");
+    const hashType = hashParams.get("type");
 
     if (accessToken && refreshToken) {
       supabase.auth
@@ -41,7 +58,7 @@ function ResetPasswordPage() {
       return;
     }
 
-    // Fallback: se o token já foi processado pelo Supabase (PKCE code flow)
+    // Fallback: sessão já estabelecida
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
         setReady(true);

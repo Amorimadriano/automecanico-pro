@@ -120,19 +120,36 @@ function LoginPage() {
     }
     setBusy(true);
 
-    // Ponte universal: sempre redireciona para o mecanicopro primeiro,
-    // que repassa para o dominio final correto.
-    const finalRedirect = encodeURIComponent(window.location.origin + "/reset-password");
-    const bridgeUrl = `https://mecanicopro.9ninebusinesscontrol.com.br/auth-redirect?final_redirect=${finalRedirect}`;
+    // Usa a edge function com service-role para enviar o email de recuperacao
+    // com redirect direto para o dominio atual (sem bridge). Isso evita
+    // restricoes de redirect URL do Supabase Auth client-side.
+    const redirectTo = window.location.origin + "/reset-password";
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: bridgeUrl,
-    });
-    setBusy(false);
-    if (error) {
-      return toast.error(error.message);
+    try {
+      const res = await fetch(
+        "https://rjcruiwlurqdwooarrpa.supabase.co/functions/v1/send-recovery-email",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, redirectTo }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        if (data.link) {
+          setBusy(false);
+          return toast.error(
+            "Nao foi possivel enviar o email automaticamente. Link: " + data.link
+          );
+        }
+        throw new Error(data.error || "Erro ao enviar email de recuperacao.");
+      }
+      toast.success("Email de redefinicao enviado! Verifique sua caixa de entrada.");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
     }
-    toast.success("Email de redefinicao enviado! Verifique sua caixa de entrada.");
   };
 
   const handleLogin = async (e: React.FormEvent) => {
