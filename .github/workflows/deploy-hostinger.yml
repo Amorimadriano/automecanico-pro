@@ -39,38 +39,26 @@ jobs:
           FILE_SIZE=$(stat -c%s "dist/client/index.html")
           echo "index.html: $FILE_SIZE bytes"
 
-      - name: Detect FTP path
-        run: |
-          sudo apt-get install -y lftp
-          lftp -u "u883849716.mecanicopro,Enzo@159753" "ftp.mecanicopro.9ninebusinesscontrol.com.br" <<'EOF'
-          set ssl:verify-certificate no
-          set ftp:ssl-allow no
-          set ftp:passive-mode yes
-          set cmd:fail-exit no
-          !echo "=== Path atual ao conectar ==="
-          pwd
-          ls
-          bye
-          EOF
-
       - name: Deploy to Hostinger via FTP
         run: |
           sudo apt-get install -y lftp
-          lftp -u "u883849716.mecanicopro,Enzo@159753" "ftp.mecanicopro.9ninebusinesscontrol.com.br" <<'EOF'
+          lftp -u "u883849716.mecanicopro,${{ secrets.HOSTINGER_FTP_PASS }}" "ftp.mecanicopro.9ninebusinesscontrol.com.br" <<'EOF'
           set ssl:verify-certificate no
           set ftp:ssl-allow no
           set ftp:passive-mode yes
           set net:timeout 180
-          set net:max-retries 3
+          set net:max-retries 5
           set cmd:fail-exit no
-          # Path do dominio adicional na Hostinger
-          cd /domains/mecanicopro.9ninebusinesscontrol.com.br/public_html || cd domains/mecanicopro.9ninebusinesscontrol.com.br/public_html || true
-          ls || true
-          # Remove arquivos antigos
-          rm -rf assets || true
-          rm -f index.html .htaccess registerSW.js sw.js manifest.json icon-*.svg || true
-          # Upload recursivo
+          set ftp:use-feat false
+          set xfer:use-temp-file no
+          set xfer:clobber on
+          # Tenta navegar para o path correto do addon domain
+          cd /domains/mecanicopro.9ninebusinesscontrol.com.br/public_html
+          cd domains/mecanicopro.9ninebusinesscontrol.com.br/public_html
+          cd /home/u883849716/domains/mecanicopro.9ninebusinesscontrol.com.br/public_html
+          cd public_html
+          # Upload recursivo - sobrescreve existentes, nao apaga antes
           lcd ./dist/client
-          mirror -R --no-perms --parallel=3 .
+          mirror -R --overwrite --no-perms .
           bye
           EOF
