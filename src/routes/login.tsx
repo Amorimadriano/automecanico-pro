@@ -120,8 +120,13 @@ function LoginPage() {
     }
     setBusy(true);
 
+    // Ponte universal: sempre redireciona para o mecanicopro primeiro,
+    // que repassa para o dominio final correto.
+    const finalRedirect = encodeURIComponent(window.location.origin + "/reset-password");
+    const bridgeUrl = `https://mecanicopro.9ninebusinesscontrol.com.br/auth-redirect?final_redirect=${finalRedirect}`;
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + "/reset-password",
+      redirectTo: bridgeUrl,
     });
     setBusy(false);
     if (error) {
