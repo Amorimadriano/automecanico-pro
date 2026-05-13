@@ -1,5 +1,5 @@
 DirectoryIndex index.html
 
-# SPA fallback: quando um arquivo nao existe, serve index.html
-# Isso funciona para rotas do React Router sem mod_rewrite
-ErrorDocument 404 /index.html
+# SPA fallback: serve index.html para qualquer rota nao encontrada
+# FallbackResource funciona melhor que ErrorDocument para rotas aninhadas
+FallbackResource /index.html
