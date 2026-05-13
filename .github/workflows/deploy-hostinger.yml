@@ -52,10 +52,10 @@ jobs:
           set ftp:use-feat false
           set xfer:use-temp-file no
           set xfer:clobber on
-          # Navega para root do addon domain
-          cd /
-          # Upload recursivo - sobrescreve existentes, nao apaga antes
+          # Garante diretorio assets
+          mkdir -f assets
+          # Upload recursivo - sobrescreve existentes, nao apaga antes, ignora erros parciais
           lcd ./dist/client
-          mirror -R --overwrite --no-perms .
+          mirror -R --overwrite --no-perms --ignore-errors .
           bye
           EOF
