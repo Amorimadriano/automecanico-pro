@@ -21,7 +21,7 @@ export const Route = createFileRoute("/app/admin")({
 });
 
 function ConfiguracoesPage() {
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, adminLoading } = useAuth();
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
@@ -79,7 +79,7 @@ function ConfiguracoesPage() {
     carregarUsuarios();
   }
 
-  if (authLoading) {
+  if (adminLoading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center text-muted-foreground">
         Carregando...

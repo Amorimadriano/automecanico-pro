@@ -6,6 +6,7 @@ export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,8 +25,10 @@ export function useAuth() {
   useEffect(() => {
     if (!user) {
       setIsAdmin(false);
+      setAdminLoading(false);
       return;
     }
+    setAdminLoading(true);
     supabase
       .from("assinaturas_mecanico")
       .select("role")
@@ -33,8 +36,10 @@ export function useAuth() {
       .single()
       .then(({ data }) => {
         setIsAdmin(data?.role === "admin");
-      });
+      })
+      .catch(() => setIsAdmin(false))
+      .finally(() => setAdminLoading(false));
   }, [user]);
 
-  return { session, user, isAdmin, loading };
+  return { session, user, isAdmin, adminLoading, loading };
 }
