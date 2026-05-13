@@ -1,6 +1,6 @@
-import { createFileRoute, useNavigate, Navigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Navigate, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Wrench } from "lucide-react";
+import { Wrench, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -210,6 +210,16 @@ function LoginPage() {
               <TabsTrigger value="login">Entrar</TabsTrigger>
               <TabsTrigger value="signup">Criar conta</TabsTrigger>
             </TabsList>
+
+            <div className="mb-4 text-center">
+              <Link
+                to="/manual"
+                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                Acessar Manual do Usuário
+              </Link>
+            </div>
 
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
