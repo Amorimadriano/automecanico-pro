@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Navigate, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Wrench, BookOpen } from "lucide-react";
+import { Wrench, BookOpen, ArrowLeft, Lock, Mail, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -88,6 +88,12 @@ function LoginPage() {
   const [emailSent, setEmailSent] = useState(false);
   const [rateLimitUntil, setRateLimitUntil] = useState(0);
 
+  // Recovery OTP flow
+  const [recoveryStep, setRecoveryStep] = useState<"idle" | "email" | "otp" | "password" | "done">("idle");
+  const [otpCode, setOtpCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+
   const rateLimitRemaining = Math.max(0, Math.ceil((rateLimitUntil - Date.now()) / 1000));
 
   useEffect(() => {
@@ -114,42 +120,72 @@ function LoginPage() {
   if (loading) return null;
   if (user) return <Navigate to="/app" />;
 
-  const handleResetPassword = async () => {
+  const startRecovery = () => {
     if (!email) {
-      return toast.error("Digite seu email acima para redefinir a senha.");
+      return toast.error("Digite seu email acima primeiro.");
+    }
+    setRecoveryStep("email");
+  };
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    const { limited, remainingSeconds } = checkRateLimit(email);
+    if (limited) {
+      setRateLimitUntil(Date.now() + remainingSeconds * 1000);
+      toast.error(`Muitas tentativas. Tente novamente em ${formatCountdown(remainingSeconds)}.`);
+      return;
     }
     setBusy(true);
-
-    // Usa a edge function com service-role para enviar o email de recuperacao
-    // com redirect direto para o dominio atual (sem bridge). Isso evita
-    // restricoes de redirect URL do Supabase Auth client-side.
-    const redirectTo = window.location.origin + "/reset-password";
-
-    try {
-      const res = await fetch(
-        "https://rjcruiwlurqdwooarrpa.supabase.co/functions/v1/send-recovery-email",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, redirectTo }),
-        }
-      );
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        if (data.link) {
-          setBusy(false);
-          return toast.error(
-            "Nao foi possivel enviar o email automaticamente. Link: " + data.link
-          );
-        }
-        throw new Error(data.error || "Erro ao enviar email de recuperacao.");
-      }
-      toast.success("Email de redefinicao enviado! Verifique sua caixa de entrada.");
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setBusy(false);
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false },
+    });
+    setBusy(false);
+    if (error) {
+      recordFailedAttempt(email);
+      return toast.error(error.message);
     }
+    recordSuccess(email);
+    setRecoveryStep("otp");
+    toast.success("Código enviado! Verifique seu email (pode demorar alguns minutos).");
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpCode || otpCode.length < 6) {
+      return toast.error("Digite o código de 6 dígitos.");
+    }
+    setBusy(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: otpCode,
+      type: "email",
+    });
+    setBusy(false);
+    if (error) {
+      return toast.error(error.message);
+    }
+    setRecoveryStep("password");
+    toast.success("Código confirmado! Agora defina sua nova senha.");
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      return toast.error("A senha deve ter pelo menos 6 caracteres.");
+    }
+    if (newPassword !== confirmNewPassword) {
+      return toast.error("As senhas não conferem.");
+    }
+    setBusy(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setBusy(false);
+    if (error) {
+      return toast.error(error.message);
+    }
+    setRecoveryStep("done");
+    toast.success("Senha redefinida com sucesso!");
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -222,88 +258,161 @@ function LoginPage() {
         </div>
 
         <div className="bg-card border rounded-xl p-6 shadow-card">
-          <Tabs defaultValue="login">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="signup">Criar conta</TabsTrigger>
-            </TabsList>
+          {recoveryStep !== "idle" ? (
+            <div className="space-y-4">
+              {/* Recovery Header */}
+              <div className="flex items-center gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setRecoveryStep("idle")}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                <h2 className="text-lg font-semibold">Recuperar senha</h2>
+              </div>
 
-            <div className="mb-4 text-center">
-              <Link
-                to="/manual"
-                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
-              >
-                <BookOpen className="h-3.5 w-3.5" />
-                Acessar Manual do Usuário
-              </Link>
-            </div>
+              {recoveryStep === "email" && (
+                <form onSubmit={handleSendOtp} className="space-y-4">
+                  <div className="text-center space-y-2">
+                    <Mail className="h-8 w-8 text-primary mx-auto" />
+                    <p className="text-sm text-muted-foreground">
+                      Enviaremos um código de verificação para <strong>{email}</strong>.
+                    </p>
+                  </div>
+                  {rateLimitRemaining > 0 && (
+                    <div className="text-sm text-destructive font-medium text-center">
+                      Aguarde {formatCountdown(rateLimitRemaining)} para reenviar.
+                    </div>
+                  )}
+                  <Button
+                    type="submit"
+                    disabled={busy || rateLimitRemaining > 0}
+                    className="w-full bg-gradient-primary text-primary-foreground shadow-glow font-semibold"
+                  >
+                    {busy ? "Enviando..." : "Enviar código"}
+                  </Button>
+                </form>
+              )}
 
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <Label htmlFor="le">Email</Label>
-                  <Input
-                    id="le"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="lp">Senha</Label>
-                  <Input
-                    id="lp"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+              {recoveryStep === "otp" && (
+                <form onSubmit={handleVerifyOtp} className="space-y-4">
+                  <div className="text-center space-y-2">
+                    <KeyRound className="h-8 w-8 text-primary mx-auto" />
+                    <p className="text-sm text-muted-foreground">
+                      Digite o código de 6 dígitos enviado para <strong>{email}</strong>.
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="otp">Código</Label>
+                    <Input
+                      id="otp"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      required
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                      placeholder="123456"
+                      className="text-center text-lg tracking-widest"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={busy || otpCode.length < 6}
+                    className="w-full bg-gradient-primary text-primary-foreground shadow-glow font-semibold"
+                  >
+                    {busy ? "Verificando..." : "Verificar código"}
+                  </Button>
                   <button
                     type="button"
-                    onClick={handleResetPassword}
-                    className="text-xs text-primary hover:underline mt-1"
+                    onClick={() => setRecoveryStep("email")}
+                    className="w-full text-xs text-primary hover:underline"
                   >
-                    Esqueci minha senha
+                    Reenviar código
                   </button>
-                </div>
-                {rateLimitRemaining > 0 && (
-                  <div className="text-sm text-destructive font-medium">
-                    Muitas tentativas falhas. Aguarde {formatCountdown(rateLimitRemaining)}.
-                  </div>
-                )}
-                <Button
-                  type="submit"
-                  disabled={busy || rateLimitRemaining > 0}
-                  className="w-full bg-gradient-primary text-primary-foreground shadow-glow font-semibold"
-                >
-                  {busy ? "Entrando..." : "Entrar na Oficina"}
-                </Button>
-              </form>
-            </TabsContent>
+                </form>
+              )}
 
-            <TabsContent value="signup">
-              {emailSent ? (
-                <div className="space-y-4 text-center">
-                  <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
-                    <p className="font-medium text-foreground">
-                      Verifique seu email para continuar
-                    </p>
-                    <p className="mt-1">
-                      Enviamos um link de confirmação para <strong>{email}</strong>. Clique no link
-                      antes de fazer login.
-                    </p>
+              {recoveryStep === "password" && (
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div className="text-center space-y-2">
+                    <Lock className="h-8 w-8 text-primary mx-auto" />
+                    <p className="text-sm text-muted-foreground">Defina sua nova senha.</p>
                   </div>
-                  <Button variant="outline" className="w-full" onClick={() => setEmailSent(false)}>
-                    Voltar para criar conta
+                  <div>
+                    <Label htmlFor="np">Nova senha (mín. 6)</Label>
+                    <Input
+                      id="np"
+                      type="password"
+                      required
+                      minLength={6}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="cp">Confirmar senha</Label>
+                    <Input
+                      id="cp"
+                      type="password"
+                      required
+                      minLength={6}
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={busy}
+                    className="w-full bg-gradient-primary text-primary-foreground shadow-glow font-semibold"
+                  >
+                    {busy ? "Salvando..." : "Salvar nova senha"}
+                  </Button>
+                </form>
+              )}
+
+              {recoveryStep === "done" && (
+                <div className="text-center space-y-4">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10">
+                    <Lock className="h-6 w-6 text-green-500" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Senha redefinida!</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Sua senha foi atualizada com sucesso.
+                  </p>
+                  <Button
+                    onClick={() => setRecoveryStep("idle")}
+                    className="w-full bg-gradient-primary text-primary-foreground shadow-glow font-semibold"
+                  >
+                    Voltar para o login
                   </Button>
                 </div>
-              ) : (
-                <form onSubmit={handleSignup} className="space-y-4">
+              )}
+            </div>
+          ) : (
+            <Tabs defaultValue="login">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="login">Entrar</TabsTrigger>
+                <TabsTrigger value="signup">Criar conta</TabsTrigger>
+              </TabsList>
+
+              <div className="mb-4 text-center">
+                <Link
+                  to="/manual"
+                  className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                >
+                  <BookOpen className="h-3.5 w-3.5" />
+                  Acessar Manual do Usuário
+                </Link>
+              </div>
+
+              <TabsContent value="login">
+                <form onSubmit={handleLogin} className="space-y-4">
                   <div>
-                    <Label htmlFor="se">Email</Label>
+                    <Label htmlFor="le">Email</Label>
                     <Input
-                      id="se"
+                      id="le"
                       type="email"
                       required
                       value={email}
@@ -311,15 +420,21 @@ function LoginPage() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="sp">Senha (mín. 6)</Label>
+                    <Label htmlFor="lp">Senha</Label>
                     <Input
-                      id="sp"
+                      id="lp"
                       type="password"
                       required
-                      minLength={6}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
+                    <button
+                      type="button"
+                      onClick={startRecovery}
+                      className="text-xs text-primary hover:underline mt-1"
+                    >
+                      Esqueci minha senha
+                    </button>
                   </div>
                   {rateLimitRemaining > 0 && (
                     <div className="text-sm text-destructive font-medium">
@@ -331,12 +446,67 @@ function LoginPage() {
                     disabled={busy || rateLimitRemaining > 0}
                     className="w-full bg-gradient-primary text-primary-foreground shadow-glow font-semibold"
                   >
-                    {busy ? "Criando..." : "Criar conta grátis"}
+                    {busy ? "Entrando..." : "Entrar na Oficina"}
                   </Button>
                 </form>
-              )}
-            </TabsContent>
-          </Tabs>
+              </TabsContent>
+
+              <TabsContent value="signup">
+                {emailSent ? (
+                  <div className="space-y-4 text-center">
+                    <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
+                      <p className="font-medium text-foreground">
+                        Verifique seu email para continuar
+                      </p>
+                      <p className="mt-1">
+                        Enviamos um link de confirmação para <strong>{email}</strong>. Clique no link
+                        antes de fazer login.
+                      </p>
+                    </div>
+                    <Button variant="outline" className="w-full" onClick={() => setEmailSent(false)}>
+                      Voltar para criar conta
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSignup} className="space-y-4">
+                    <div>
+                      <Label htmlFor="se">Email</Label>
+                      <Input
+                        id="se"
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sp">Senha (mín. 6)</Label>
+                      <Input
+                        id="sp"
+                        type="password"
+                        required
+                        minLength={6}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
+                    </div>
+                    {rateLimitRemaining > 0 && (
+                      <div className="text-sm text-destructive font-medium">
+                        Muitas tentativas falhas. Aguarde {formatCountdown(rateLimitRemaining)}.
+                      </div>
+                    )}
+                    <Button
+                      type="submit"
+                      disabled={busy || rateLimitRemaining > 0}
+                      className="w-full bg-gradient-primary text-primary-foreground shadow-glow font-semibold"
+                    >
+                      {busy ? "Criando..." : "Criar conta grátis"}
+                    </Button>
+                  </form>
+                )}
+              </TabsContent>
+            </Tabs>
+          )}
         </div>
       </div>
     </div>
