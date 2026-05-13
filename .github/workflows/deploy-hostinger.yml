@@ -52,10 +52,8 @@ jobs:
           set ftp:use-feat false
           set xfer:use-temp-file no
           set xfer:clobber on
-          # Garante diretorio assets
-          mkdir -f assets
-          # Upload recursivo - sobrescreve existentes, nao apaga antes
+          # Upload recursivo - forca sobrescricao completa, nao compara arquivos existentes
           lcd ./dist/client
-          mirror -R --overwrite --no-perms .
+          mirror -R --delete --overwrite --no-perms --ignore-time --parallel=3 .
           bye
           EOF
