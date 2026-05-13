@@ -52,11 +52,8 @@ jobs:
           set ftp:use-feat false
           set xfer:use-temp-file no
           set xfer:clobber on
-          # Tenta navegar para o path correto do addon domain
-          cd /domains/mecanicopro.9ninebusinesscontrol.com.br/public_html
-          cd domains/mecanicopro.9ninebusinesscontrol.com.br/public_html
-          cd /home/u883849716/domains/mecanicopro.9ninebusinesscontrol.com.br/public_html
-          cd public_html
+          # Navega para root do addon domain
+          cd /
           # Upload recursivo - sobrescreve existentes, nao apaga antes
           lcd ./dist/client
           mirror -R --overwrite --no-perms .
