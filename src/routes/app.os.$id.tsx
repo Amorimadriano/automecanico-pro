@@ -22,6 +22,7 @@ function Page() {
   const [cliente, setCliente] = useState<any>(null);
   const [veiculo, setVeiculo] = useState<any>(null);
   const [funcionario, setFuncionario] = useState<any>(null);
+  const [empresa, setEmpresa] = useState<any>(null);
   const [itens, setItens] = useState<any[]>([]);
   const [pecas, setPecas] = useState<any[]>([]);
   const [openItem, setOpenItem] = useState(false);
@@ -54,6 +55,8 @@ function Page() {
       supabase.from("pecas_mecanico").select("*"),
     ]);
     setCliente(c); setVeiculo(v); setItens(it ?? []); setPecas(p ?? []);
+    const { data: emp } = await supabase.from("empresas_mecanico").select("*").single();
+    setEmpresa(emp);
     if (o.funcionario_id) {
       const { data: f } = await supabase.from("funcionarios_mecanico").select("*").eq("id", o.funcionario_id).single();
       setFuncionario(f);
@@ -256,7 +259,7 @@ function Page() {
           <ArrowLeft className="h-4 w-4 mr-1" />Voltar
         </Link>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => gerarOSPdf(os, cliente, veiculo, itens, funcionario)}>
+          <Button variant="outline" onClick={() => gerarOSPdf(os, cliente, veiculo, itens, funcionario, empresa)}>
             <FileDown className="h-4 w-4 mr-2" />PDF
           </Button>
           {!os.pago && os.status === "concluida" && (

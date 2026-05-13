@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Users, Car, ClipboardList, Package, Calendar, DollarSign, UserCog, LogOut, Wrench, Percent, ShieldCheck, FileText, TrendingUp, Store, Shield } from "lucide-react";
+import { LayoutDashboard, Users, Car, ClipboardList, Package, Calendar, DollarSign, UserCog, LogOut, Wrench, Percent, ShieldCheck, FileText, TrendingUp, Store, Shield, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -55,12 +55,24 @@ export function AppSidebar() {
             </Link>
           );
         })}
+        <Link
+          to="/app/configuracoes"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all",
+            path.startsWith("/app/configuracoes")
+              ? "bg-gradient-primary text-primary-foreground shadow-glow"
+              : "text-sidebar-foreground hover:bg-sidebar-accent"
+          )}
+        >
+          <Settings className="h-4 w-4" />
+          Configurações
+        </Link>
         {isAdmin && (
           <Link
-            to="/app/configuracoes"
+            to="/app/admin"
             className={cn(
               "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all",
-              path.startsWith("/app/configuracoes")
+              path.startsWith("/app/admin")
                 ? "bg-gradient-primary text-primary-foreground shadow-glow"
                 : "text-sidebar-foreground hover:bg-sidebar-accent"
             )}
@@ -87,7 +99,11 @@ export function AppSidebar() {
 export function MobileBar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { isAdmin } = useAuth();
-  const mobileItems = [...items.slice(0, 4), ...(isAdmin ? [{ to: "/app/configuracoes", label: "Admin", icon: Shield }] : [{ to: "/app/financeiro", label: "Financeiro", icon: DollarSign }])];
+  const mobileItems = [
+    ...items.slice(0, 3),
+    { to: "/app/configuracoes", label: "Ajustes", icon: Settings },
+    ...(isAdmin ? [{ to: "/app/admin", label: "Admin", icon: Shield }] : [{ to: "/app/financeiro", label: "Financeiro", icon: DollarSign }]),
+  ];
 
   return (
     <nav

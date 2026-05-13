@@ -2,24 +2,35 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { BRL, fmtDate } from "./format";
 
-export function gerarOSPdf(os: any, cliente: any, veiculo: any, itens: any[], funcionario?: any) {
+export function gerarOSPdf(os: any, cliente: any, veiculo: any, itens: any[], funcionario?: any, empresa?: any) {
   const doc = new jsPDF();
   const pageW = doc.internal.pageSize.getWidth();
 
-  // Header
+  // Header com dados da empresa
   doc.setFillColor(20, 20, 20);
-  doc.rect(0, 0, pageW, 28, "F");
+  doc.rect(0, 0, pageW, empresa ? 36 : 28, "F");
   doc.setFillColor(234, 88, 12);
-  doc.rect(0, 28, pageW, 2, "F");
+  doc.rect(0, empresa ? 36 : 28, pageW, 2, "F");
+
   doc.setTextColor(234, 88, 12);
-  doc.setFont("helvetica", "bold"); doc.setFontSize(20);
-  doc.text("OFICINA ERP", 14, 14);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(18);
+  doc.text(empresa?.nome_fantasia || empresa?.razao_social || "OFICINA ERP", 14, 14);
+
+  if (empresa) {
+    doc.setTextColor(200);
+    doc.setFontSize(8); doc.setFont("helvetica", "normal");
+    let h = 22;
+    if (empresa.cnpj) { doc.text(`CNPJ: ${empresa.cnpj}`, 14, h); h += 4; }
+    if (empresa.endereco) { doc.text(empresa.endereco, 14, h); h += 4; }
+    if (empresa.telefone) { doc.text(`Tel: ${empresa.telefone}`, 14, h); }
+  }
+
   doc.setTextColor(255);
   doc.setFontSize(10); doc.setFont("helvetica", "normal");
-  doc.text(`Ordem de Serviço #${os.numero}`, 14, 22);
-  doc.text(`Emitida: ${fmtDate(new Date())}`, pageW - 14, 22, { align: "right" });
+  doc.text(`Ordem de Serviço #${os.numero}`, 14, empresa ? 36 : 22);
+  doc.text(`Emitida: ${fmtDate(new Date())}`, pageW - 14, empresa ? 36 : 22, { align: "right" });
 
-  let y = 40;
+  let y = empresa ? 48 : 40;
   doc.setTextColor(40);
   doc.setFontSize(11); doc.setFont("helvetica", "bold");
   doc.text("CLIENTE", 14, y);
@@ -76,8 +87,14 @@ export function gerarOSPdf(os: any, cliente: any, veiculo: any, itens: any[], fu
   doc.setTextColor(234, 88, 12);
   doc.text(`TOTAL: ${BRL(os.total)}`, xR, finalY + 18, { align: "right" });
 
+  let footerY = doc.internal.pageSize.getHeight() - 12;
+  if (empresa?.chave_pix) {
+    doc.setTextColor(234, 88, 12); doc.setFontSize(9); doc.setFont("helvetica", "bold");
+    doc.text(`Pagamento via Pix: ${empresa.chave_pix}`, pageW / 2, footerY, { align: "center" });
+    footerY -= 5;
+  }
   doc.setTextColor(120); doc.setFontSize(8); doc.setFont("helvetica", "normal");
-  doc.text("Documento gerado por Oficina ERP", pageW / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" });
+  doc.text(empresa?.nome_fantasia || empresa?.razao_social || "Oficina ERP", pageW / 2, footerY, { align: "center" });
 
   doc.save(`OS-${os.numero}.pdf`);
 }

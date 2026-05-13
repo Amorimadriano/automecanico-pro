@@ -27,6 +27,7 @@ import { Route as AppConfiguracoesRouteImport } from './routes/app.configuracoes
 import { Route as AppComissoesRouteImport } from './routes/app.comissoes'
 import { Route as AppClientesRouteImport } from './routes/app.clientes'
 import { Route as AppAgendaRouteImport } from './routes/app.agenda'
+import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppOsIndexRouteImport } from './routes/app.os.index'
 import { Route as AppOsIdRouteImport } from './routes/app.os.$id'
 import { Route as AppOrcamentosIdRouteImport } from './routes/app.orcamentos.$id'
@@ -123,6 +124,11 @@ const AppAgendaRoute = AppAgendaRouteImport.update({
   path: '/agenda',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOsIndexRoute = AppOsIndexRouteImport.update({
   id: '/os/',
   path: '/os/',
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/assinatura': typeof AssinaturaRoute
   '/login': typeof LoginRoute
   '/offline': typeof OfflineRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
   '/app/clientes': typeof AppClientesRoute
   '/app/comissoes': typeof AppComissoesRoute
@@ -180,6 +187,7 @@ export interface FileRoutesByTo {
   '/assinatura': typeof AssinaturaRoute
   '/login': typeof LoginRoute
   '/offline': typeof OfflineRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
   '/app/clientes': typeof AppClientesRoute
   '/app/comissoes': typeof AppComissoesRoute
@@ -206,6 +214,7 @@ export interface FileRoutesById {
   '/assinatura': typeof AssinaturaRoute
   '/login': typeof LoginRoute
   '/offline': typeof OfflineRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
   '/app/clientes': typeof AppClientesRoute
   '/app/comissoes': typeof AppComissoesRoute
@@ -233,6 +242,7 @@ export interface FileRouteTypes {
     | '/assinatura'
     | '/login'
     | '/offline'
+    | '/app/admin'
     | '/app/agenda'
     | '/app/clientes'
     | '/app/comissoes'
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/assinatura'
     | '/login'
     | '/offline'
+    | '/app/admin'
     | '/app/agenda'
     | '/app/clientes'
     | '/app/comissoes'
@@ -282,6 +293,7 @@ export interface FileRouteTypes {
     | '/assinatura'
     | '/login'
     | '/offline'
+    | '/app/admin'
     | '/app/agenda'
     | '/app/clientes'
     | '/app/comissoes'
@@ -438,6 +450,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAgendaRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/os/': {
       id: '/app/os/'
       path: '/os'
@@ -513,6 +532,7 @@ const AppVeiculosRouteWithChildren = AppVeiculosRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
   AppAgendaRoute: typeof AppAgendaRoute
   AppClientesRoute: typeof AppClientesRoute
   AppComissoesRoute: typeof AppComissoesRoute
@@ -531,6 +551,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
   AppAgendaRoute: AppAgendaRoute,
   AppClientesRoute: AppClientesRoute,
   AppComissoesRoute: AppComissoesRoute,
