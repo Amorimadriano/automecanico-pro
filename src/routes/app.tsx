@@ -30,10 +30,13 @@ function AppLayout() {
       }
 
       const now = new Date();
-      const trialValid = data.status === "trial" && new Date(data.trial_fim) > now;
-      const activeValid = data.status === "ativo" && new Date(data.assinatura_vencimento) > now;
+      const trialEnd = data.trial_fim ? new Date(data.trial_fim) : null;
+      const subsEnd = data.assinatura_vencimento ? new Date(data.assinatura_vencimento) : null;
 
-      if (trialValid || activeValid) {
+      // Ativo se houver qualquer periodo valido (trial ou assinatura)
+      const isActive = (trialEnd && trialEnd > now) || (subsEnd && subsEnd > now);
+
+      if (isActive) {
         setAssinaturaStatus("active");
       } else {
         setAssinaturaStatus("blocked");

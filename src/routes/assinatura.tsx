@@ -114,6 +114,11 @@ function AssinaturaPage() {
 
         {trial && (
           <div className="space-y-4">
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+              <p className="text-sm text-amber-700 font-medium text-center">
+                Voce tem {diasRestantes} {diasRestantes === 1 ? "dia" : "dias"} gratuitos restantes no teste.
+              </p>
+            </div>
             <a
               href="https://mpago.la/2uQVSaf"
               target="_blank"
@@ -130,9 +135,6 @@ function AssinaturaPage() {
               <ArrowLeft className="h-5 w-5" />
               Voltar para o Sistema
             </Link>
-            <p className="text-xs text-muted-foreground text-center">
-              Voce tem {diasRestantes} dias gratuitos para testar. Aproveite todos os recursos!
-            </p>
           </div>
         )}
 
