@@ -2,8 +2,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock, Calendar, CreditCard, AlertTriangle, CheckCircle, ArrowLeft, LogOut } from "lucide-react";
+import { Lock, Calendar, CreditCard, AlertTriangle, CheckCircle, ArrowLeft, LogOut, RefreshCw } from "lucide-react";
 import { BRL } from "@/lib/format";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/assinatura")({
   component: AssinaturaPage,
@@ -50,6 +51,18 @@ function AssinaturaPage() {
   async function handleLogout() {
     await supabase.auth.signOut();
     navigate({ to: "/login" });
+  }
+
+  async function handleRenovar() {
+    const { error } = await supabase.rpc("renovar_assinatura", {
+      p_user_id: user!.id,
+    });
+    if (error) {
+      toast?.error?.(error.message) || alert("Erro ao renovar: " + error.message);
+      return;
+    }
+    toast?.success?.("Assinatura renovada por mais 30 dias!") || alert("Assinatura renovada!");
+    loadAssinatura();
   }
 
   return (
@@ -154,13 +167,27 @@ function AssinaturaPage() {
         )}
 
         {ativo && (
-          <Link
-            to="/app"
-            className="flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground py-3 rounded-xl font-medium hover:bg-primary/90 transition"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            Voltar para o Sistema
-          </Link>
+          <div className="space-y-4">
+            <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+              <p className="text-sm text-green-700 font-medium text-center">
+                Assinatura ativa. Proxima cobranca em {Math.max(0, Math.ceil((new Date(assinatura.proxima_cobranca).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} dias.
+              </p>
+            </div>
+            <Link
+              to="/app"
+              className="flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground py-3 rounded-xl font-medium hover:bg-primary/90 transition"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              Voltar para o Sistema
+            </Link>
+            <button
+              onClick={handleRenovar}
+              className="flex items-center justify-center gap-2 w-full bg-muted text-foreground py-3 rounded-xl font-medium hover:bg-muted/80 transition"
+            >
+              <RefreshCw className="h-5 w-5" />
+              Confirmar Pagamento / Renovar
+            </button>
+          </div>
         )}
       </div>
     </div>

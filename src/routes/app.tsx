@@ -20,7 +20,7 @@ function AppLayout() {
     async function check() {
       const { data } = await supabase
         .from("assinaturas_mecanico")
-        .select("status, trial_fim, assinatura_vencimento")
+        .select("status, trial_fim, assinatura_vencimento, proxima_cobranca")
         .eq("user_id", user.id)
         .single();
 
