@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AssinaturaRouteImport } from './routes/assinatura'
@@ -34,6 +35,11 @@ import { Route as AppOrcamentosIdRouteImport } from './routes/app.orcamentos.$id
 import { Route as AppFornecedoresCatalogoRouteImport } from './routes/app.fornecedores.catalogo'
 import { Route as AppVeiculosIdDiagnosticoRouteImport } from './routes/app.veiculos.$id.diagnostico'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OfflineRoute = OfflineRouteImport.update({
   id: '/offline',
   path: '/offline',
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/assinatura': typeof AssinaturaRoute
   '/login': typeof LoginRoute
   '/offline': typeof OfflineRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
   '/app/clientes': typeof AppClientesRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/assinatura': typeof AssinaturaRoute
   '/login': typeof LoginRoute
   '/offline': typeof OfflineRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
   '/app/clientes': typeof AppClientesRoute
@@ -214,6 +222,7 @@ export interface FileRoutesById {
   '/assinatura': typeof AssinaturaRoute
   '/login': typeof LoginRoute
   '/offline': typeof OfflineRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/app/admin': typeof AppAdminRoute
   '/app/agenda': typeof AppAgendaRoute
   '/app/clientes': typeof AppClientesRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/assinatura'
     | '/login'
     | '/offline'
+    | '/reset-password'
     | '/app/admin'
     | '/app/agenda'
     | '/app/clientes'
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/assinatura'
     | '/login'
     | '/offline'
+    | '/reset-password'
     | '/app/admin'
     | '/app/agenda'
     | '/app/clientes'
@@ -293,6 +304,7 @@ export interface FileRouteTypes {
     | '/assinatura'
     | '/login'
     | '/offline'
+    | '/reset-password'
     | '/app/admin'
     | '/app/agenda'
     | '/app/clientes'
@@ -320,10 +332,18 @@ export interface RootRouteChildren {
   AssinaturaRoute: typeof AssinaturaRoute
   LoginRoute: typeof LoginRoute
   OfflineRoute: typeof OfflineRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/offline': {
       id: '/offline'
       path: '/offline'
@@ -577,6 +597,7 @@ const rootRouteChildren: RootRouteChildren = {
   AssinaturaRoute: AssinaturaRoute,
   LoginRoute: LoginRoute,
   OfflineRoute: OfflineRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
