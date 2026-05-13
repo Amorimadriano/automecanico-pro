@@ -120,14 +120,8 @@ function LoginPage() {
     }
     setBusy(true);
 
-    // Usa a Edge Function auth-callback como ponte universal.
-    // O Site URL no Supabase DEVE estar configurado como a URL desta edge function:
-    // https://rjcruiwlurqdwooarrpa.supabase.co/functions/v1/auth-callback
-    const finalRedirect = encodeURIComponent(window.location.origin + "/reset-password");
-    const edgeCallbackUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth-callback?final_redirect=${finalRedirect}`;
-
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: edgeCallbackUrl,
+      redirectTo: window.location.origin + "/reset-password",
     });
     setBusy(false);
     if (error) {
