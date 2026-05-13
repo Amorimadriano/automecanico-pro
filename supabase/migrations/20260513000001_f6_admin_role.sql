@@ -7,7 +7,7 @@ ALTER TABLE public.assinaturas_mecanico
 ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user'));
 
 -- Atualiza view para incluir role
-DROP VIEW IF EXISTS public.v_assinaturas_resumo_mecanico;
+DROP VIEW IF EXISTS public.v_assinaturas_resumo_mecanico CASCADE;
 CREATE VIEW public.v_assinaturas_resumo_mecanico AS
 SELECT
   a.id,
