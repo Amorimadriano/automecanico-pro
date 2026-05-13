@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as OfflineRouteImport } from './routes/offline'
+import { Route as ManualRouteImport } from './routes/manual'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthRedirectRouteImport } from './routes/auth-redirect'
 import { Route as AssinaturaRouteImport } from './routes/assinatura'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -45,9 +47,19 @@ const OfflineRoute = OfflineRouteImport.update({
   path: '/offline',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ManualRoute = ManualRouteImport.update({
+  id: '/manual',
+  path: '/manual',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRedirectRoute = AuthRedirectRouteImport.update({
+  id: '/auth-redirect',
+  path: '/auth-redirect',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AssinaturaRoute = AssinaturaRouteImport.update({
@@ -166,7 +178,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/assinatura': typeof AssinaturaRoute
+  '/auth-redirect': typeof AuthRedirectRoute
   '/login': typeof LoginRoute
+  '/manual': typeof ManualRoute
   '/offline': typeof OfflineRoute
   '/reset-password': typeof ResetPasswordRoute
   '/app/admin': typeof AppAdminRoute
@@ -192,7 +206,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/assinatura': typeof AssinaturaRoute
+  '/auth-redirect': typeof AuthRedirectRoute
   '/login': typeof LoginRoute
+  '/manual': typeof ManualRoute
   '/offline': typeof OfflineRoute
   '/reset-password': typeof ResetPasswordRoute
   '/app/admin': typeof AppAdminRoute
@@ -220,7 +236,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/assinatura': typeof AssinaturaRoute
+  '/auth-redirect': typeof AuthRedirectRoute
   '/login': typeof LoginRoute
+  '/manual': typeof ManualRoute
   '/offline': typeof OfflineRoute
   '/reset-password': typeof ResetPasswordRoute
   '/app/admin': typeof AppAdminRoute
@@ -249,7 +267,9 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/assinatura'
+    | '/auth-redirect'
     | '/login'
+    | '/manual'
     | '/offline'
     | '/reset-password'
     | '/app/admin'
@@ -275,7 +295,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/assinatura'
+    | '/auth-redirect'
     | '/login'
+    | '/manual'
     | '/offline'
     | '/reset-password'
     | '/app/admin'
@@ -302,7 +324,9 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/assinatura'
+    | '/auth-redirect'
     | '/login'
+    | '/manual'
     | '/offline'
     | '/reset-password'
     | '/app/admin'
@@ -330,7 +354,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AssinaturaRoute: typeof AssinaturaRoute
+  AuthRedirectRoute: typeof AuthRedirectRoute
   LoginRoute: typeof LoginRoute
+  ManualRoute: typeof ManualRoute
   OfflineRoute: typeof OfflineRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
 }
@@ -351,11 +377,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OfflineRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/manual': {
+      id: '/manual'
+      path: '/manual'
+      fullPath: '/manual'
+      preLoaderRoute: typeof ManualRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth-redirect': {
+      id: '/auth-redirect'
+      path: '/auth-redirect'
+      fullPath: '/auth-redirect'
+      preLoaderRoute: typeof AuthRedirectRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/assinatura': {
@@ -595,7 +635,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AssinaturaRoute: AssinaturaRoute,
+  AuthRedirectRoute: AuthRedirectRoute,
   LoginRoute: LoginRoute,
+  ManualRoute: ManualRoute,
   OfflineRoute: OfflineRoute,
   ResetPasswordRoute: ResetPasswordRoute,
 }

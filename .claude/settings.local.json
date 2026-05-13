@@ -46,7 +46,12 @@
       "Bash(kill %1)",
       "Bash(npx vite *)",
       "Bash(PORT=3001 timeout 10 node server.js)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(gh run *)",
+      "Bash(lftp *)",
+      "Bash(apt-get install *)",
+      "Bash(sudo apt-get install -y lftp)",
+      "Bash(python *)"
     ]
   }
 }

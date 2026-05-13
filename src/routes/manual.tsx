@@ -439,11 +439,11 @@ function ManualPage() {
             <div className="mt-3 flex items-center justify-center gap-4 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <Mail className="h-3.5 w-3.5" />
-                suporte@oficinaerp.com.br
+                amorim.adriano83@gmail.com
               </span>
               <span className="inline-flex items-center gap-1">
                 <Smartphone className="h-3.5 w-3.5" />
-                (11) 99999-9999
+                (11) 97692-3833
               </span>
             </div>
             <Link
