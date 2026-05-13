@@ -1,4 +1,4 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,9 +22,18 @@ export const Route = createFileRoute("/app/admin")({
 
 function ConfiguracoesPage() {
   const { user, isAdmin, adminLoading } = useAuth();
+  const navigate = useNavigate();
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
+
+  useEffect(() => {
+    console.log("[Admin] adminLoading:", adminLoading, "isAdmin:", isAdmin);
+    if (!adminLoading && !isAdmin) {
+      console.log("[Admin] Redirecionando para /app");
+      navigate({ to: "/app", replace: true });
+    }
+  }, [adminLoading, isAdmin, navigate]);
 
   useEffect(() => {
     if (isAdmin) carregarUsuarios();
@@ -88,7 +97,7 @@ function ConfiguracoesPage() {
   }
 
   if (!isAdmin) {
-    return <Navigate to="/app" />;
+    return null;
   }
 
   const filtrados = usuarios.filter((u) =>
