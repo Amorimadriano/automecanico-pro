@@ -120,18 +120,27 @@ function LoginPage() {
     }
     setBusy(true);
 
-    // Usa a Edge Function como ponte para suportar múltiplos domínios
-    const finalRedirect = encodeURIComponent(window.location.origin + "/reset-password");
-    const edgeFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth-callback?final_redirect=${finalRedirect}`;
+    const redirectTo = window.location.origin + "/reset-password";
+    const edgeUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-recovery-email`;
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: edgeFunctionUrl,
-    });
-    setBusy(false);
-    if (error) {
-      return toast.error(error.message);
+    try {
+      const res = await fetch(edgeUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, redirectTo }),
+      });
+      const result = await res.json();
+
+      if (!res.ok || result.error) {
+        toast.error(result.error || "Erro ao enviar email de recuperação.");
+      } else {
+        toast.success("Email de redefinição enviado! Verifique sua caixa de entrada.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro de rede.");
     }
-    toast.success("Email de redefinicao enviado! Verifique sua caixa de entrada.");
+
+    setBusy(false);
   };
 
   const handleLogin = async (e: React.FormEvent) => {

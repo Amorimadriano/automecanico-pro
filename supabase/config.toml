@@ -2,3 +2,6 @@ project_id = "rjcruiwlurqdwooarrpa"
 
 [functions.auth-callback]
 verify_jwt = false
+
+[functions.send-recovery-email]
+verify_jwt = false
