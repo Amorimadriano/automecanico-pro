@@ -119,8 +119,13 @@ function LoginPage() {
       return toast.error("Digite seu email acima para redefinir a senha.");
     }
     setBusy(true);
+
+    // Usa a Edge Function como ponte para suportar múltiplos domínios
+    const finalRedirect = encodeURIComponent(window.location.origin + "/reset-password");
+    const edgeFunctionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth-callback?final_redirect=${finalRedirect}`;
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + "/reset-password",
+      redirectTo: edgeFunctionUrl,
     });
     setBusy(false);
     if (error) {
