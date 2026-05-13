@@ -43,7 +43,10 @@
       "WebSearch",
       "WebFetch(domain:tanstack.com)",
       "Bash(PORT=3001 node server.js)",
-      "Bash(kill %1)"
+      "Bash(kill %1)",
+      "Bash(npx vite *)",
+      "Bash(PORT=3001 timeout 10 node server.js)",
+      "Read(//tmp/**)"
     ]
   }
 }

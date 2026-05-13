@@ -56,6 +56,9 @@ jobs:
           mkdir -f assets
           # Upload recursivo - sobrescreve existentes, nao apaga antes, ignora erros parciais
           lcd ./dist/client
+<<<<<<< HEAD
           mirror -R --overwrite --no-perms .
+=======
+>>>>>>> 6df6c403199df21847dd9f32c3d0a1cec09e9652
           bye
           EOF
