@@ -1,8 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock, Calendar, CreditCard, AlertTriangle, CheckCircle, ArrowLeft } from "lucide-react";
+import { Lock, Calendar, CreditCard, AlertTriangle, CheckCircle, ArrowLeft, LogOut } from "lucide-react";
 import { BRL } from "@/lib/format";
 
 export const Route = createFileRoute("/assinatura")({
@@ -11,6 +11,7 @@ export const Route = createFileRoute("/assinatura")({
 
 function AssinaturaPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [assinatura, setAssinatura] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,9 +47,23 @@ function AssinaturaPage() {
       ? Math.max(0, Math.ceil((new Date(assinatura.assinatura_vencimento).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
       : 0;
 
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    navigate({ to: "/login" });
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-md w-full">
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={handleLogout}
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive transition"
+          >
+            <LogOut className="h-4 w-4" />
+            Sair
+          </button>
+        </div>
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <Lock className="h-8 w-8 text-primary" />
