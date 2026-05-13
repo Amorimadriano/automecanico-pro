@@ -25,7 +25,25 @@
       "Bash(npx kill-port *)",
       "Bash(gh auth *)",
       "PowerShell(.\\\\deploy.ps1)",
-      "Bash(supabase migration *)"
+      "Bash(supabase migration *)",
+      "PowerShell($env:PORT=\"3001\"; Start-Process node -ArgumentList \"dist/server/index.js\" -WindowStyle Hidden; Start-Sleep -Seconds 8; Invoke-WebRequest -Uri \"http://localhost:3001/\" -OutFile \"dist/client/index.html\"; Get-Content \"dist/client/index.html\" -TotalCount 5)",
+      "PowerShell(Stop-Job *)",
+      "PowerShell($env:PORT=\"3001\"; node server.js)",
+      "Bash(curl -s -o dist/client/index.html -w \"%{http_code}\" http://localhost:3001/)",
+      "Bash(npx tsr *)",
+      "Bash(curl -s -o /tmp/admin.html -w \"%{http_code}\" http://localhost:3001/app/admin)",
+      "Bash(curl -sI \"https://mecanicopro.9ninebusinesscontrol.com.br/assets/app.admin-CkoYs7fL.js\")",
+      "Bash(curl -sI \"https://mecanicopro.9ninebusinesscontrol.com.br/assets/app.admin-BVLrCHkg.js\")",
+      "Bash(curl *)",
+      "Bash(grep -E \"^index.html$\")",
+      "Bash(sort -k5 -hr)",
+      "Bash(grep -o '<script class=\"\\\\$tsr\"[^>]*>.*</script>' root_ssr.html)",
+      "Bash(grep -o '\\\\\\\\^@')",
+      "PowerShell(Get-Command *)",
+      "WebSearch",
+      "WebFetch(domain:tanstack.com)",
+      "Bash(PORT=3001 node server.js)",
+      "Bash(kill %1)"
     ]
   }
 }

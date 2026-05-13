@@ -15,10 +15,29 @@ function AssinaturaPage() {
   const navigate = useNavigate();
   const [assinatura, setAssinatura] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [diasRestantes, setDiasRestantes] = useState(0);
+  const [proximaCobrancaDias, setProximaCobrancaDias] = useState(0);
 
   useEffect(() => {
     if (user) loadAssinatura();
   }, [user]);
+
+  useEffect(() => {
+    if (!assinatura) return;
+    const trial = assinatura.status === "trial";
+    const ativo = assinatura.status === "ativo";
+    const now = Date.now();
+
+    if (trial) {
+      setDiasRestantes(Math.max(0, Math.ceil((new Date(assinatura.trial_fim).getTime() - now) / (1000 * 60 * 60 * 24))));
+    } else if (ativo) {
+      setDiasRestantes(Math.max(0, Math.ceil((new Date(assinatura.assinatura_vencimento).getTime() - now) / (1000 * 60 * 60 * 24))));
+      setProximaCobrancaDias(Math.max(0, Math.ceil((new Date(assinatura.proxima_cobranca).getTime() - now) / (1000 * 60 * 60 * 24))));
+    } else {
+      setDiasRestantes(0);
+      setProximaCobrancaDias(0);
+    }
+  }, [assinatura]);
 
   async function loadAssinatura() {
     const { data } = await supabase
@@ -41,12 +60,6 @@ function AssinaturaPage() {
   const trial = assinatura?.status === "trial";
   const vencido = assinatura?.status === "vencido" || assinatura?.status === "cancelado";
   const ativo = assinatura?.status === "ativo";
-
-  const diasRestantes = trial
-    ? Math.max(0, Math.ceil((new Date(assinatura.trial_fim).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-    : ativo
-      ? Math.max(0, Math.ceil((new Date(assinatura.assinatura_vencimento).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-      : 0;
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -170,7 +183,7 @@ function AssinaturaPage() {
           <div className="space-y-4">
             <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
               <p className="text-sm text-green-700 font-medium text-center">
-                Assinatura ativa. Proxima cobranca em {Math.max(0, Math.ceil((new Date(assinatura.proxima_cobranca).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} dias.
+                Assinatura ativa. Proxima cobranca em {proximaCobrancaDias} dias.
               </p>
             </div>
             <Link

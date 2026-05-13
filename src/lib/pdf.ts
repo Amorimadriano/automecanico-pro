@@ -3,35 +3,46 @@ import autoTable from "jspdf-autotable";
 import QRCode from "qrcode";
 import { BRL, fmtDate } from "./format";
 
-// Gera payload Pix EMVCo estático
-function gerarPayloadPix(chave: string, valor: number, descricao: string): string {
-  const pad = (id: string, val: string) => {
+// Gera payload Pix EMVCo estático (padrão BRCODE)
+function gerarPayloadPix(chave: string, valor: number, _descricao: string): string {
+  function pad(id: string, val: string) {
     const len = val.length.toString().padStart(2, "0");
     return id + len + val;
-  };
+  }
 
-  const merchantAccount = pad("00", "br.gov.bcb.pix") + pad("01", chave);
+  // Merchant Account Information
+  const mai = pad("00", "br.gov.bcb.pix") + pad("01", chave);
+
+  // Additional Data Field (TXID)
   const txid = pad("05", "***");
-  const amount = valor > 0 ? pad("54", valor.toFixed(2)) : "";
 
-  const payload =
-    pad("00", "01") +
-    pad("26", merchantAccount) +
-    pad("52", "0000") +
-    pad("53", "986") +
-    amount +
-    pad("58", "BR") +
-    pad("62", txid) +
-    "6304";
+  let payload =
+    pad("00", "01") +           // Payload Format Indicator
+    pad("26", mai) +            // Merchant Account Information
+    pad("52", "0000") +         // Merchant Category Code
+    pad("53", "986");           // Transaction Currency (BRL)
 
-  // CRC16
+  if (valor > 0) {
+    payload += pad("54", valor.toFixed(2)); // Transaction Amount
+  }
+
+  payload +=
+    pad("58", "BR") +           // Country Code
+    pad("62", txid) +           // Additional Data Field
+    "6304";                     // CRC16 placeholder
+
+  // CRC16-CCITT-FALSE
   function crc16(str: string): string {
-    let crc = 0xffff;
+    let crc = 0xFFFF;
+    const polynomial = 0x1021;
     for (let i = 0; i < str.length; i++) {
       crc ^= str.charCodeAt(i) << 8;
       for (let j = 0; j < 8; j++) {
-        crc = (crc & 0x8000) !== 0 ? (crc << 1) ^ 0x1021 : crc << 1;
-        crc &= 0xffff;
+        if ((crc & 0x8000) !== 0) {
+          crc = ((crc << 1) ^ polynomial) & 0xFFFF;
+        } else {
+          crc = (crc << 1) & 0xFFFF;
+        }
       }
     }
     return crc.toString(16).toUpperCase().padStart(4, "0");
@@ -131,21 +142,22 @@ export async function gerarOSPdf(os: any, cliente: any, veiculo: any, itens: any
   if (empresa?.chave_pix && Number(os.total) > 0) {
     try {
       const payload = gerarPayloadPix(empresa.chave_pix, Number(os.total), `OS #${os.numero}`);
-      const dataUrl = await QRCode.toDataURL(payload, { width: 150, margin: 1 });
-      const qrSize = 35;
+      const dataUrl = await QRCode.toDataURL(payload, { width: 300, margin: 2, errorCorrectionLevel: "M" });
+      const qrSize = 40;
       const qrX = 14;
-      const qrY = doc.internal.pageSize.getHeight() - 55;
+      const qrY = doc.internal.pageSize.getHeight() - 60;
       doc.addImage(dataUrl, "PNG", qrX, qrY, qrSize, qrSize);
 
-      doc.setTextColor(40); doc.setFontSize(8); doc.setFont("helvetica", "bold");
-      doc.text("Pague com Pix", qrX, qrY - 3);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Chave: ${empresa.chave_pix}`, qrX + qrSize + 4, qrY + 10);
-      doc.text(`Valor: ${BRL(os.total)}`, qrX + qrSize + 4, qrY + 15);
+      doc.setTextColor(40); doc.setFontSize(9); doc.setFont("helvetica", "bold");
+      doc.text("Pague com Pix", qrX, qrY - 4);
+      doc.setFontSize(8); doc.setFont("helvetica", "normal");
+      doc.text(`Chave: ${empresa.chave_pix}`, qrX + qrSize + 5, qrY + 10);
+      doc.text(`Valor: ${BRL(os.total)}`, qrX + qrSize + 5, qrY + 16);
+      doc.setFontSize(7); doc.setTextColor(120);
+      doc.text("Escaneie o QR Code ou copie a chave Pix", qrX + qrSize + 5, qrY + 24);
 
-      footerY = qrY - 6;
+      footerY = qrY - 8;
     } catch {
-      // fallback: texto apenas
       doc.setTextColor(234, 88, 12); doc.setFontSize(9); doc.setFont("helvetica", "bold");
       doc.text(`Pagamento via Pix: ${empresa.chave_pix}`, pageW / 2, footerY, { align: "center" });
       footerY -= 5;
