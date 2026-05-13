@@ -51,9 +51,10 @@ jobs:
           set cmd:fail-exit no
           set ftp:use-feat false
           set xfer:use-temp-file no
-          set xfer:clobber on
-          # Upload recursivo - forca sobrescricao completa, nao compara arquivos existentes
           lcd ./dist/client
-          mirror -R --delete --overwrite --no-perms --ignore-time --parallel=3 .
+          # Apaga assets antigos primeiro (se existirem)
+          glob rm -f assets/*.js assets/*.css
+          # Upload recursivo sem comparacao
+          mirror -R --overwrite --no-perms .
           bye
           EOF
