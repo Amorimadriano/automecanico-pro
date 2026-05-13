@@ -1,5 +1,12 @@
 DirectoryIndex index.html
 
-# SPA fallback: serve index.html para qualquer rota nao encontrada
-# FallbackResource funciona melhor que ErrorDocument para rotas aninhadas
-FallbackResource /index.html
+# SPA fallback via mod_rewrite
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# Fallback caso mod_rewrite nao esteja disponivel
+ErrorDocument 404 /index.html
