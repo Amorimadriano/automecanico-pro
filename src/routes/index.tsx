@@ -8,3 +8,4 @@ export const Route = createFileRoute("/")({
     return <Navigate to={user ? "/app" : "/login"} />;
   },
 });
+// cache-bust-v2

@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, Package, Pencil, Trash2, AlertTriangle, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { BRL } from "@/lib/format";
+import { ImportarPlanilhaDialog } from "@/components/ImportarPlanilhaDialog";
 
 export const Route = createFileRoute("/app/estoque")({ component: Page, head: () => ({ meta: [{ title: "Estoque" }] }) });
 
@@ -78,8 +79,23 @@ function Page() {
     <>
       <PageHeader title="Estoque" subtitle={`${list.length} peças • ${baixos.length} em estoque baixo`}
         action={
-          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
-            <DialogTrigger asChild><Button className="bg-gradient-primary text-primary-foreground shadow-glow"><Plus className="h-4 w-4 mr-2" />Nova peça</Button></DialogTrigger>
+          <div className="flex items-center gap-2">
+            <ImportarPlanilhaDialog
+              tabela="pecas_mecanico"
+              titulo="Peças"
+              campos={[
+                { key: "nome", label: "Nome", required: true },
+                { key: "codigo", label: "Código" },
+                { key: "preco_custo", label: "Preço custo", transform: (v: any) => v !== undefined && v !== "" ? Number(v) : undefined },
+                { key: "preco_venda", label: "Preço venda", required: true, transform: (v: any) => Number(v) },
+                { key: "quantidade", label: "Quantidade", transform: (v: any) => v !== undefined && v !== "" ? Number(v) : undefined },
+                { key: "estoque_minimo", label: "Estoque mínimo", transform: (v: any) => v !== undefined && v !== "" ? Number(v) : undefined },
+                { key: "unidade", label: "Unidade" },
+              ]}
+              onSuccess={load}
+            />
+            <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
+              <DialogTrigger asChild><Button className="bg-gradient-primary text-primary-foreground shadow-glow"><Plus className="h-4 w-4 mr-2" />Nova peça</Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle className="font-display">{editing ? "Editar" : "Nova"} peça</DialogTitle></DialogHeader>
               <form onSubmit={save} className="space-y-3">
@@ -100,6 +116,7 @@ function Page() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         } />
 
       <Tabs value={tab} onValueChange={setTab}>

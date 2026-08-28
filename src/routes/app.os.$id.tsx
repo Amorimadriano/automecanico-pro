@@ -441,16 +441,6 @@ function Page() {
             <div>
               <div className="flex items-center justify-between">
                 <Label>Diagnóstico / Serviço executado</Label>
-                {veiculo?.id && (
-                  <Link
-                    to="/app/veiculos/$id/diagnostico"
-                    params={{ id: veiculo.id }}
-                    className="inline-flex items-center text-xs text-primary hover:underline mb-1"
-                  >
-                    <ScanLine className="h-3 w-3 mr-1" />
-                    Importar diagnóstico OBD2
-                  </Link>
-                )}
               </div>
               <Textarea name="diagnostico" defaultValue={os.diagnostico ?? ""} rows={3} />
             </div>

@@ -139,7 +139,7 @@ function AssinaturaPage() {
         {vencido && (
           <div className="space-y-4">
             <a
-              href="https://mpago.la/2uQVSaf"
+              href="https://mpago.la/17opnVd"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground py-3 rounded-xl font-medium hover:bg-primary/90 transition"
@@ -161,7 +161,7 @@ function AssinaturaPage() {
               </p>
             </div>
             <a
-              href="https://mpago.la/2uQVSaf"
+              href="https://mpago.la/17opnVd"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground py-3 rounded-xl font-medium hover:bg-primary/90 transition"

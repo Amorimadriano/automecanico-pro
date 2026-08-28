@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FileText } from "lucide-react";
+import { Plus, FileText, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { BRL, fmtDate, STATUS_ORCAMENTO } from "@/lib/format";
 
@@ -20,9 +20,12 @@ function Page() {
   const [veiculos, setVeiculos] = useState<any[]>([]);
   const [funcs, setFuncs] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [editando, setEditando] = useState<any>(null);
   const [clienteId, setClienteId] = useState("");
   const [veiculoId, setVeiculoId] = useState("");
   const [funcId, setFuncId] = useState("");
+  const [statusId, setStatusId] = useState("");
   const [filtro, setFiltro] = useState("todos");
 
   useEffect(() => { load(); }, []);
@@ -54,6 +57,32 @@ function Page() {
     setOpen(false); setClienteId(""); setVeiculoId(""); setFuncId(""); load();
   }
 
+  function abrirEditar(orcamento: any) {
+    setEditando(orcamento);
+    setClienteId(orcamento.cliente_id);
+    setVeiculoId(orcamento.veiculo_id);
+    setFuncId(orcamento.funcionario_id || "");
+    setStatusId(orcamento.status || "pendente");
+    setOpenEdit(true);
+  }
+
+  async function salvarEdicao(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editando) return;
+    const fd = new FormData(e.currentTarget);
+    const payload: any = Object.fromEntries(fd);
+    payload.cliente_id = clienteId;
+    payload.veiculo_id = veiculoId;
+    payload.funcionario_id = funcId || null;
+    payload.km_entrada = payload.km_entrada ? Number(payload.km_entrada) : null;
+    if (!payload.data_validade) payload.data_validade = null;
+    payload.status = statusId;
+    const { error } = await supabase.from("orcamentos_mecanico").update(payload).eq("id", editando.id);
+    if (error) return toast.error(error.message);
+    toast.success(`Orçamento #${editando.numero} atualizado`);
+    setOpenEdit(false); setEditando(null); setClienteId(""); setVeiculoId(""); setFuncId(""); setStatusId(""); load();
+  }
+
   const veiculosCliente = clienteId ? veiculos.filter(v => v.cliente_id === clienteId) : [];
   const filtered = filtro === "todos" ? list : list.filter(o => o.status === filtro);
 
@@ -61,41 +90,89 @@ function Page() {
     <>
       <PageHeader title="Orçamentos" subtitle={`${list.length} orçamentos no total`}
         action={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button className="bg-gradient-primary text-primary-foreground shadow-glow"><Plus className="h-4 w-4 mr-2" />Novo Orçamento</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle className="font-display">Novo Orçamento</DialogTitle></DialogHeader>
-              <form onSubmit={criar} className="space-y-3">
-                <div>
-                  <Label>Cliente*</Label>
-                  <Select value={clienteId} onValueChange={(v) => { setClienteId(v); setVeiculoId(""); }}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>{clientes.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Veículo*</Label>
-                  <Select value={veiculoId} onValueChange={setVeiculoId} disabled={!clienteId}>
-                    <SelectTrigger><SelectValue placeholder={clienteId ? "Selecione" : "Escolha cliente primeiro"} /></SelectTrigger>
-                    <SelectContent>{veiculosCliente.map(v => <SelectItem key={v.id} value={v.id}>{v.placa} — {v.marca} {v.modelo}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Mecânico</Label>
-                  <Select value={funcId} onValueChange={setFuncId}>
-                    <SelectTrigger><SelectValue placeholder="(opcional)" /></SelectTrigger>
-                    <SelectContent>{funcs.map(f => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>KM entrada</Label><Input name="km_entrada" type="number" /></div>
-                  <div><Label>Validade</Label><Input name="data_validade" type="date" /></div>
-                </div>
-                <div><Label>Problema relatado</Label><Textarea name="descricao_problema" placeholder="O que o cliente relatou?" /></div>
-                <DialogFooter><Button type="submit" className="bg-gradient-primary text-primary-foreground">Criar Orçamento</Button></DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild><Button className="bg-gradient-primary text-primary-foreground shadow-glow"><Plus className="h-4 w-4 mr-2" />Novo Orçamento</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle className="font-display">Novo Orçamento</DialogTitle></DialogHeader>
+                <form onSubmit={criar} className="space-y-3">
+                  <div>
+                    <Label>Cliente*</Label>
+                    <Select value={clienteId} onValueChange={(v) => { setClienteId(v); setVeiculoId(""); }}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>{clientes.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Veículo*</Label>
+                    <Select value={veiculoId} onValueChange={setVeiculoId} disabled={!clienteId}>
+                      <SelectTrigger><SelectValue placeholder={clienteId ? "Selecione" : "Escolha cliente primeiro"} /></SelectTrigger>
+                      <SelectContent>{veiculosCliente.map(v => <SelectItem key={v.id} value={v.id}>{v.placa} — {v.marca} {v.modelo}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Mecânico</Label>
+                    <Select value={funcId} onValueChange={setFuncId}>
+                      <SelectTrigger><SelectValue placeholder="(opcional)" /></SelectTrigger>
+                      <SelectContent>{funcs.map(f => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>KM entrada</Label><Input name="km_entrada" type="number" /></div>
+                    <div><Label>Validade</Label><Input name="data_validade" type="date" /></div>
+                  </div>
+                  <div><Label>Problema relatado</Label><Textarea name="descricao_problema" placeholder="O que o cliente relatou?" /></div>
+                  <DialogFooter><Button type="submit" className="bg-gradient-primary text-primary-foreground">Criar Orçamento</Button></DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={openEdit} onOpenChange={(v) => { setOpenEdit(v); if (!v) setEditando(null); }}>
+              <DialogContent>
+                <DialogHeader><DialogTitle className="font-display">Editar Orçamento #{editando?.numero}</DialogTitle></DialogHeader>
+                <form onSubmit={salvarEdicao} className="space-y-3">
+                  <div>
+                    <Label>Status</Label>
+                    <Select value={statusId} onValueChange={setStatusId}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pendente">Pendente</SelectItem>
+                        <SelectItem value="aprovado">Aprovado</SelectItem>
+                        <SelectItem value="rejeitado">Reprovado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Cliente*</Label>
+                    <Select value={clienteId} onValueChange={(v) => { setClienteId(v); setVeiculoId(""); }}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>{clientes.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Veículo*</Label>
+                    <Select value={veiculoId} onValueChange={setVeiculoId} disabled={!clienteId}>
+                      <SelectTrigger><SelectValue placeholder={clienteId ? "Selecione" : "Escolha cliente primeiro"} /></SelectTrigger>
+                      <SelectContent>{veiculosCliente.map(v => <SelectItem key={v.id} value={v.id}>{v.placa} — {v.marca} {v.modelo}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Mecânico</Label>
+                    <Select value={funcId} onValueChange={setFuncId}>
+                      <SelectTrigger><SelectValue placeholder="(opcional)" /></SelectTrigger>
+                      <SelectContent>{funcs.map(f => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>KM entrada</Label><Input name="km_entrada" type="number" defaultValue={editando?.km_entrada} /></div>
+                    <div><Label>Validade</Label><Input name="data_validade" type="date" defaultValue={editando?.data_validade?.split("T")[0]} /></div>
+                  </div>
+                  <div><Label>Problema relatado</Label><Textarea name="descricao_problema" defaultValue={editando?.descricao_problema} placeholder="O que o cliente relatou?" /></div>
+                  <DialogFooter><Button type="submit" className="bg-gradient-primary text-primary-foreground">Salvar Alterações</Button></DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </>
         } />
 
       <div className="flex gap-2 flex-wrap mb-4">
@@ -111,7 +188,7 @@ function Page() {
         <div className="bg-card border rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-muted text-xs uppercase text-muted-foreground">
-              <tr><th className="text-left px-4 py-3">Nº</th><th className="text-left px-4 py-3">Cliente / Veículo</th><th className="text-left px-4 py-3">Status</th><th className="text-left px-4 py-3 hidden md:table-cell">Criado</th><th className="text-right px-4 py-3">Total</th></tr>
+              <tr><th className="text-left px-4 py-3">Nº</th><th className="text-left px-4 py-3">Cliente / Veículo</th><th className="text-left px-4 py-3">Status</th><th className="text-left px-4 py-3 hidden md:table-cell">Criado</th><th className="text-right px-4 py-3">Total</th><th className="text-center px-4 py-3 w-16"></th></tr>
             </thead>
             <tbody>
               {filtered.map(o => {
@@ -126,6 +203,11 @@ function Page() {
                     <td className="px-4 py-3"><span className={`inline-block px-2 py-0.5 rounded border text-xs ${st.cls}`}>{st.label}</span></td>
                     <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{fmtDate(o.data_criacao)}</td>
                     <td className="px-4 py-3 text-right font-display text-base">{BRL(o.total)}</td>
+                    <td className="px-4 py-3 text-center">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); abrirEditar(o); }}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </td>
                   </tr>
                 );
               })}

@@ -41,6 +41,50 @@ export function isWebBluetoothSupported(): boolean {
 const ELM327_SERVICE_UUID = "0000fff0-0000-1000-8000-00805f9b34fb";
 const ELM327_CHARACTERISTIC_UUID = "0000fff1-0000-1000-8000-00805f9b34fb";
 
+const INIT_COMMANDS = ["ATZ", "ATE0", "ATL1", "ATSP0"];
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function initELM327(conn: OBD2Connection): Promise<boolean> {
+  for (const cmd of INIT_COMMANDS) {
+    try {
+      const resp = await sendCommand(conn, cmd, { timeout: 2000 });
+      if (resp.includes("ERROR")) {
+        console.warn(`[OBD2] Falha no comando ${cmd}:`, resp);
+      }
+    } catch (e) {
+      console.warn(`[OBD2] Timeout no comando ${cmd}:`, e);
+    }
+  }
+  return true;
+}
+
+async function discoverCharacteristic(server: BluetoothRemoteGATTServer): Promise<BluetoothRemoteGATTCharacteristic | null> {
+  try {
+    const service = await server.getPrimaryService(ELM327_SERVICE_UUID);
+    return await service.getCharacteristic(ELM327_CHARACTERISTIC_UUID);
+  } catch {
+    // fallback: scan all services/characteristics
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const services = await (server as any).getPrimaryServices();
+    for (const svc of services) {
+      try {
+        const characteristics = await svc.getCharacteristics();
+        for (const ch of characteristics) {
+          if (ch.properties.write && ch.properties.read) {
+            return ch;
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
+  return null;
+}
+
 export async function connectOBD2(): Promise<OBD2Connection | null> {
   if (!isWebBluetoothSupported()) {
     console.warn("Web Bluetooth não suportado. Usando modo simulação.");
@@ -48,7 +92,7 @@ export async function connectOBD2(): Promise<OBD2Connection | null> {
   }
 
   try {
-    const device = await navigator.bluetooth.requestDevice({
+    const device = await navigator.bluetooth!.requestDevice({
       acceptAllDevices: true,
       optionalServices: [ELM327_SERVICE_UUID],
     });
@@ -59,13 +103,20 @@ export async function connectOBD2(): Promise<OBD2Connection | null> {
     }
 
     const server = await device.gatt.connect();
-    const service = await server.getPrimaryService(ELM327_SERVICE_UUID);
-    const characteristic = await service.getCharacteristic(ELM327_CHARACTERISTIC_UUID);
+    const characteristic = await discoverCharacteristic(server);
+    if (!characteristic) {
+      toast("Não encontrou característica compatível no dispositivo");
+      server.disconnect();
+      return null;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const service = (characteristic as any).service;
 
-    return { device, server, service, characteristic };
+    const conn: OBD2Connection = { device, server, service, characteristic };
+    await initELM327(conn);
+    return conn;
   } catch (e: any) {
     if (e.name === "NotFoundError" || e.name === "UserCancelled") {
-      // Usuário cancelou ou não selecionou dispositivo
       return null;
     }
     console.error("Erro ao conectar OBD2:", e);
@@ -83,15 +134,38 @@ export function disconnectOBD2(conn: OBD2Connection) {
   }
 }
 
-async function sendCommand(conn: OBD2Connection, cmd: string): Promise<string> {
+interface SendOptions {
+  timeout?: number;
+  retries?: number;
+}
+
+async function sendCommand(conn: OBD2Connection, cmd: string, opts?: SendOptions): Promise<string> {
   if (conn.simulate) {
     return mockResponse(cmd);
   }
+  const timeout = opts?.timeout ?? 2000;
   const encoder = new TextEncoder();
   await conn.characteristic.writeValue(encoder.encode(cmd + "\r"));
-  const value = await conn.characteristic.readValue();
-  const decoder = new TextDecoder("utf-8");
-  return decoder.decode(value).trim();
+
+  // Espera adaptador processar e colocar resposta no buffer BLE
+  let raw = "";
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    try {
+      const value = await conn.characteristic.readValue();
+      const decoder = new TextDecoder("utf-8");
+      const chunk = decoder.decode(value).trim();
+      raw += chunk;
+      // Resposta completa termina com > ou possui \r\n suficiente
+      if (chunk.includes(">") || chunk.includes("\r\n")) {
+        break;
+      }
+    } catch {
+      // ignorar erros de leitura intermitentes
+    }
+    await delay(80);
+  }
+  return raw.trim().replace(">", "").trim();
 }
 
 function mockResponse(cmd: string): string {
@@ -303,7 +377,7 @@ export async function readEngineTemp(conn: OBD2Connection): Promise<PIDValue | n
 export function createMockConnection(): OBD2Connection {
   return {
     device: {} as BluetoothDevice,
-    server: {} as BluetoothRemoteGAServer,
+    server: {} as BluetoothRemoteGATTServer,
     service: {} as BluetoothRemoteGATTService,
     characteristic: {} as BluetoothRemoteGATTCharacteristic,
     simulate: true,

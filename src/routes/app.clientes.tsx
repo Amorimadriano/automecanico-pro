@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, Users, Pencil, Trash2, Search, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { BRL, fmtDate } from "@/lib/format";
+import { ImportarPlanilhaDialog } from "@/components/ImportarPlanilhaDialog";
 
 export const Route = createFileRoute("/app/clientes")({ component: Page, head: () => ({ meta: [{ title: "Clientes" }] }) });
 
@@ -72,10 +73,24 @@ function Page() {
     <>
       <PageHeader title="Clientes" subtitle={`${list.length} cadastrados`}
         action={
-          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-primary text-primary-foreground shadow-glow"><Plus className="h-4 w-4 mr-2" />Novo cliente</Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <ImportarPlanilhaDialog
+              tabela="clientes_mecanico"
+              titulo="Clientes"
+              campos={[
+                { key: "nome", label: "Nome", required: true },
+                { key: "telefone", label: "Telefone" },
+                { key: "documento", label: "CPF/CNPJ" },
+                { key: "email", label: "Email" },
+                { key: "endereco", label: "Endereço" },
+                { key: "observacoes", label: "Observações" },
+              ]}
+              onSuccess={load}
+            />
+            <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
+              <DialogTrigger asChild>
+                <Button className="bg-gradient-primary text-primary-foreground shadow-glow"><Plus className="h-4 w-4 mr-2" />Novo cliente</Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle className="font-display">{editing ? "Editar" : "Novo"} cliente</DialogTitle></DialogHeader>
               <form onSubmit={save} className="space-y-3">
@@ -91,6 +106,7 @@ function Page() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         } />
 
       <Tabs value={tab} onValueChange={setTab}>

@@ -35,7 +35,6 @@ import { Route as AppOsIndexRouteImport } from './routes/app.os.index'
 import { Route as AppOsIdRouteImport } from './routes/app.os.$id'
 import { Route as AppOrcamentosIdRouteImport } from './routes/app.orcamentos.$id'
 import { Route as AppFornecedoresCatalogoRouteImport } from './routes/app.fornecedores.catalogo'
-import { Route as AppVeiculosIdDiagnosticoRouteImport } from './routes/app.veiculos.$id.diagnostico'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -167,12 +166,6 @@ const AppFornecedoresCatalogoRoute = AppFornecedoresCatalogoRouteImport.update({
   path: '/catalogo',
   getParentRoute: () => AppFornecedoresRoute,
 } as any)
-const AppVeiculosIdDiagnosticoRoute =
-  AppVeiculosIdDiagnosticoRouteImport.update({
-    id: '/$id/diagnostico',
-    path: '/$id/diagnostico',
-    getParentRoute: () => AppVeiculosRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -195,13 +188,12 @@ export interface FileRoutesByFullPath {
   '/app/funcionarios': typeof AppFuncionariosRoute
   '/app/garantias': typeof AppGarantiasRoute
   '/app/orcamentos': typeof AppOrcamentosRouteWithChildren
-  '/app/veiculos': typeof AppVeiculosRouteWithChildren
+  '/app/veiculos': typeof AppVeiculosRoute
   '/app/': typeof AppIndexRoute
   '/app/fornecedores/catalogo': typeof AppFornecedoresCatalogoRoute
   '/app/orcamentos/$id': typeof AppOrcamentosIdRoute
   '/app/os/$id': typeof AppOsIdRoute
   '/app/os/': typeof AppOsIndexRoute
-  '/app/veiculos/$id/diagnostico': typeof AppVeiculosIdDiagnosticoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -223,13 +215,12 @@ export interface FileRoutesByTo {
   '/app/funcionarios': typeof AppFuncionariosRoute
   '/app/garantias': typeof AppGarantiasRoute
   '/app/orcamentos': typeof AppOrcamentosRouteWithChildren
-  '/app/veiculos': typeof AppVeiculosRouteWithChildren
+  '/app/veiculos': typeof AppVeiculosRoute
   '/app': typeof AppIndexRoute
   '/app/fornecedores/catalogo': typeof AppFornecedoresCatalogoRoute
   '/app/orcamentos/$id': typeof AppOrcamentosIdRoute
   '/app/os/$id': typeof AppOsIdRoute
   '/app/os': typeof AppOsIndexRoute
-  '/app/veiculos/$id/diagnostico': typeof AppVeiculosIdDiagnosticoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -253,13 +244,12 @@ export interface FileRoutesById {
   '/app/funcionarios': typeof AppFuncionariosRoute
   '/app/garantias': typeof AppGarantiasRoute
   '/app/orcamentos': typeof AppOrcamentosRouteWithChildren
-  '/app/veiculos': typeof AppVeiculosRouteWithChildren
+  '/app/veiculos': typeof AppVeiculosRoute
   '/app/': typeof AppIndexRoute
   '/app/fornecedores/catalogo': typeof AppFornecedoresCatalogoRoute
   '/app/orcamentos/$id': typeof AppOrcamentosIdRoute
   '/app/os/$id': typeof AppOsIdRoute
   '/app/os/': typeof AppOsIndexRoute
-  '/app/veiculos/$id/diagnostico': typeof AppVeiculosIdDiagnosticoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -290,7 +280,6 @@ export interface FileRouteTypes {
     | '/app/orcamentos/$id'
     | '/app/os/$id'
     | '/app/os/'
-    | '/app/veiculos/$id/diagnostico'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -318,7 +307,6 @@ export interface FileRouteTypes {
     | '/app/orcamentos/$id'
     | '/app/os/$id'
     | '/app/os'
-    | '/app/veiculos/$id/diagnostico'
   id:
     | '__root__'
     | '/'
@@ -347,7 +335,6 @@ export interface FileRouteTypes {
     | '/app/orcamentos/$id'
     | '/app/os/$id'
     | '/app/os/'
-    | '/app/veiculos/$id/diagnostico'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -545,13 +532,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFornecedoresCatalogoRouteImport
       parentRoute: typeof AppFornecedoresRoute
     }
-    '/app/veiculos/$id/diagnostico': {
-      id: '/app/veiculos/$id/diagnostico'
-      path: '/$id/diagnostico'
-      fullPath: '/app/veiculos/$id/diagnostico'
-      preLoaderRoute: typeof AppVeiculosIdDiagnosticoRouteImport
-      parentRoute: typeof AppVeiculosRoute
-    }
   }
 }
 
@@ -579,18 +559,6 @@ const AppOrcamentosRouteWithChildren = AppOrcamentosRoute._addFileChildren(
   AppOrcamentosRouteChildren,
 )
 
-interface AppVeiculosRouteChildren {
-  AppVeiculosIdDiagnosticoRoute: typeof AppVeiculosIdDiagnosticoRoute
-}
-
-const AppVeiculosRouteChildren: AppVeiculosRouteChildren = {
-  AppVeiculosIdDiagnosticoRoute: AppVeiculosIdDiagnosticoRoute,
-}
-
-const AppVeiculosRouteWithChildren = AppVeiculosRoute._addFileChildren(
-  AppVeiculosRouteChildren,
-)
-
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppAgendaRoute: typeof AppAgendaRoute
@@ -604,7 +572,7 @@ interface AppRouteChildren {
   AppFuncionariosRoute: typeof AppFuncionariosRoute
   AppGarantiasRoute: typeof AppGarantiasRoute
   AppOrcamentosRoute: typeof AppOrcamentosRouteWithChildren
-  AppVeiculosRoute: typeof AppVeiculosRouteWithChildren
+  AppVeiculosRoute: typeof AppVeiculosRoute
   AppIndexRoute: typeof AppIndexRoute
   AppOsIdRoute: typeof AppOsIdRoute
   AppOsIndexRoute: typeof AppOsIndexRoute
@@ -623,7 +591,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFuncionariosRoute: AppFuncionariosRoute,
   AppGarantiasRoute: AppGarantiasRoute,
   AppOrcamentosRoute: AppOrcamentosRouteWithChildren,
-  AppVeiculosRoute: AppVeiculosRouteWithChildren,
+  AppVeiculosRoute: AppVeiculosRoute,
   AppIndexRoute: AppIndexRoute,
   AppOsIdRoute: AppOsIdRoute,
   AppOsIndexRoute: AppOsIndexRoute,

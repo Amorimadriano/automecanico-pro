@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Plus, Pencil, Trash2, Store, RefreshCw, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { buscarCatalogoMock } from "@/lib/fornecedor";
+import { ImportarPlanilhaDialog } from "@/components/ImportarPlanilhaDialog";
 
 export const Route = createFileRoute("/app/fornecedores")({ component: Page, head: () => ({ meta: [{ title: "Fornecedores" }] }) });
 
@@ -84,8 +85,23 @@ function Page() {
     <>
       <PageHeader title="Fornecedores" subtitle={`${list.length} cadastrados`}
         action={
-          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
-            <DialogTrigger asChild><Button className="bg-gradient-primary text-primary-foreground shadow-glow"><Plus className="h-4 w-4 mr-2" />Novo fornecedor</Button></DialogTrigger>
+          <div className="flex items-center gap-2">
+            <ImportarPlanilhaDialog
+              tabela="fornecedores_mecanico"
+              titulo="Fornecedores"
+              campos={[
+                { key: "nome", label: "Nome", required: true },
+                { key: "cnpj", label: "CNPJ" },
+                { key: "telefone", label: "Telefone" },
+                { key: "email", label: "Email" },
+                { key: "website", label: "Website" },
+                { key: "api_endpoint", label: "API Endpoint" },
+                { key: "api_key", label: "API Key" },
+              ]}
+              onSuccess={load}
+            />
+            <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
+              <DialogTrigger asChild><Button className="bg-gradient-primary text-primary-foreground shadow-glow"><Plus className="h-4 w-4 mr-2" />Novo fornecedor</Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle className="font-display">{editing ? "Editar" : "Novo"} fornecedor</DialogTitle></DialogHeader>
               <form onSubmit={save} className="space-y-3">
@@ -110,6 +126,7 @@ function Page() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         } />
 
       {list.length === 0 ? <EmptyState icon={Store} title="Nenhum fornecedor" hint="Cadastre fornecedores de peças." /> : (

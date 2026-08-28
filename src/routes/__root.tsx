@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -82,32 +81,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker
-          .register("/sw.js", { scope: "/" })
-          .then((reg) => {
-            console.log("[PWA] Service Worker registrado:", reg.scope);
-            reg.addEventListener("updatefound", () => {
-              const newWorker = reg.installing;
-              if (newWorker) {
-                newWorker.addEventListener("statechange", () => {
-                  if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-                    console.log("[PWA] Nova versão disponível — recarregando...");
-                    window.location.reload();
-                  }
-                });
-              }
-            });
-          })
-          .catch((err) => {
-            console.error("[PWA] Falha ao registrar Service Worker:", err);
-          });
-      });
-    }
-  }, []);
-
   return (
     <AuthProvider>
       <Outlet />

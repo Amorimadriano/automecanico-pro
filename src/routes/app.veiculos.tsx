@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, EmptyState } from "@/components/PageHeader";
@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Car, Pencil, Trash2, AlertTriangle, History, Wrench, Package, Calendar, Gauge, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 import { fmtDate, BRL } from "@/lib/format";
+import { ImportarPlanilhaDialog } from "@/components/ImportarPlanilhaDialog";
+import { DiagnosticoOBD2Modal } from "@/components/DiagnosticoOBD2Modal";
 import {
   ResponsiveContainer,
   LineChart,
@@ -49,6 +51,9 @@ function Page() {
   const [histVeiculo, setHistVeiculo] = useState<any>(null);
   const [histData, setHistData] = useState<HistoricoItem[]>([]);
   const [histLoading, setHistLoading] = useState(false);
+
+  const [diagOpen, setDiagOpen] = useState(false);
+  const [diagVeiculo, setDiagVeiculo] = useState<any>(null);
 
   useEffect(() => { load(); }, []);
   async function load() {
@@ -114,8 +119,45 @@ function Page() {
     <>
       <PageHeader title="Veículos" subtitle={`${list.length} cadastrados`}
         action={
-          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditing(null); setClienteId(""); } }}>
-            <DialogTrigger asChild><Button className="bg-gradient-primary text-primary-foreground shadow-glow"><Plus className="h-4 w-4 mr-2" />Novo veículo</Button></DialogTrigger>
+          <div className="flex items-center gap-2">
+            <ImportarPlanilhaDialog
+              tabela="veiculos_mecanico"
+              titulo="Veículos"
+              campos={[
+                { key: "cliente_documento", label: "Cliente (CPF/CNPJ)" },
+                { key: "cliente_nome", label: "Cliente (Nome)" },
+                { key: "placa", label: "Placa", required: true },
+                { key: "marca", label: "Marca" },
+                { key: "modelo", label: "Modelo" },
+                { key: "ano", label: "Ano", transform: (v: any) => v !== undefined && v !== "" ? Number(v) : undefined },
+                { key: "cor", label: "Cor" },
+                { key: "km_atual", label: "KM Atual", transform: (v: any) => v !== undefined && v !== "" ? Number(v) : undefined },
+                { key: "km_proxima_revisao", label: "KM Próx. Revisão", transform: (v: any) => v !== undefined && v !== "" ? Number(v) : undefined },
+                { key: "data_proxima_revisao", label: "Data Próx. Revisão" },
+                { key: "observacoes", label: "Observações" },
+              ]}
+              onBeforeInsert={async (payload) => {
+                return payload.map((row: any) => {
+                  const doc = row.cliente_documento;
+                  const nome = row.cliente_nome;
+                  let cliente = null;
+                  if (doc) {
+                    cliente = clientes.find((c: any) => c.documento && c.documento.replace(/\D/g, "") === String(doc).replace(/\D/g, ""));
+                  }
+                  if (!cliente && nome) {
+                    cliente = clientes.find((c: any) => c.nome.toLowerCase().trim() === String(nome).toLowerCase().trim());
+                  }
+                  if (!cliente) {
+                    throw new Error(`Cliente não encontrado para o veículo "${row.placa}". Informe CPF/CNPJ ou nome exato do cliente cadastrado.`);
+                  }
+                  const { cliente_documento, cliente_nome, ...rest } = row;
+                  return { ...rest, cliente_id: cliente.id };
+                });
+              }}
+              onSuccess={load}
+            />
+            <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditing(null); setClienteId(""); } }}>
+              <DialogTrigger asChild><Button className="bg-gradient-primary text-primary-foreground shadow-glow"><Plus className="h-4 w-4 mr-2" />Novo veículo</Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle className="font-display">{editing ? "Editar" : "Novo"} veículo</DialogTitle></DialogHeader>
               <form onSubmit={save} className="space-y-3">
@@ -144,6 +186,7 @@ function Page() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         } />
 
       {list.length === 0 ? <EmptyState icon={Car} title="Nenhum veículo" hint="Cadastre o veículo de um cliente." /> : (
@@ -154,9 +197,9 @@ function Page() {
                 <div className="font-mono text-primary text-lg">{v.placa}</div>
                 <div className="flex gap-1">
                   <Button size="icon" variant="ghost" onClick={() => openHistorico(v)} title="Histórico"><History className="h-4 w-4" /></Button>
-                  <Link to="/app/veiculos/$id/diagnostico" params={{ id: v.id }} title="Diagnóstico OBD2">
-                    <Button size="icon" variant="ghost"><ScanLine className="h-4 w-4 text-primary" /></Button>
-                  </Link>
+                  <Button size="icon" variant="ghost" onClick={() => { setDiagVeiculo(v); setDiagOpen(true); }} title="Diagnóstico OBD2">
+                    <ScanLine className="h-4 w-4 text-primary" />
+                  </Button>
                   <Button size="icon" variant="ghost" onClick={() => { setEditing(v); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => remove(v.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </div>
@@ -278,6 +321,11 @@ function Page() {
           )}
         </SheetContent>
       </Sheet>
+      <DiagnosticoOBD2Modal
+        veiculo={diagVeiculo}
+        open={diagOpen}
+        onOpenChange={setDiagOpen}
+      />
     </>
   );
 }

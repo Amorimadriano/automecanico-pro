@@ -1,103 +1,85 @@
 # Deploy - AutoMecanico Pro
 
-## Opcao 1: Hostinger FTP Compartilhado (Apache)
+Este projeto utiliza **TanStack Start** (React 19 + TanStack Router) integrado nativamente com o **Cloudflare Workers** (Workers with Assets).
 
-Este projeto usa **SPA (Single Page Application)** com React + TanStack Router. O build gera arquivos estaticos que podem ser hospedados em qualquer servidor Apache com suporte a `.htaccess`.
+---
 
-### Requisitos
+## Opção 1: Cloudflare Workers (Recomendado)
 
-- **Node.js** >= 20 no seu computador local (para build)
-- **npm** >= 10
-- Acesso **FTP** ao servidor da Hostinger
-- Servidor **Apache** com `mod_rewrite` habilitado (padrao na Hostinger)
+O projeto já possui integração nativa com o Cloudflare via `@cloudflare/vite-plugin` e `wrangler.jsonc`.
 
-### Passo a passo
+### Pré-requisitos
 
-#### 1. Clone e instale dependencias (localmente)
+1. **Conta na Cloudflare** (gratuita).
+2. **Node.js** >= 20 (no ambiente Windows com `nvm-windows`, execute `nvm use 24.14.1`).
+3. **Wrangler CLI** (já incluído como dependência do projeto).
 
-```bash
-git clone https://github.com/Amorimadriano/automecanico-pro.git
-cd automecanico-pro
-npm install
-```
+### Passo a Passo para Deploy Direto via CLI
 
-#### 2. Configure as variaveis de ambiente
+#### 1. Faça Login na Cloudflare (primeira vez)
 
-Crie o arquivo `.env` na raiz com suas credenciais do Supabase:
-
-```env
-SUPABASE_URL=https://rjcruiwlurqdwooarrpa.supabase.co
-SUPABASE_PUBLISHABLE_KEY=sb_publishable_dSvNshTQiRJYBq3kMb2MQg_K2rvrpoG
-VITE_SUPABASE_URL=https://rjcruiwlurqdwooarrpa.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_dSvNshTQiRJYBq3kMb2MQg_K2rvrpoG
-VITE_AI_GATEWAY_URL=https://ai.gateway.lovable.dev/v1/chat/completions
-```
-
-> **IMPORTANTE**: Nunca commite o arquivo `.env`.
-
-#### 3. Execute o build para FTP
+No terminal, faça login na sua conta Cloudflare:
 
 ```bash
-# Windows (Git Bash / WSL)
+npx wrangler login
+```
+
+Uma janela do navegador será aberta para você autorizar o acesso do Wrangler à sua conta.
+
+#### 2. Configurar Variáveis de Ambiente no Cloudflare
+
+No Cloudflare Workers, as variáveis públicas (`VITE_*`) são embutidas no build do cliente. No entanto, se precisar definir variáveis de servidor ou segredos:
+
+```bash
+npx wrangler secret put SUPABASE_URL
+npx wrangler secret put SUPABASE_PUBLISHABLE_KEY
+```
+
+Ou configure diretamente pelo painel da Cloudflare em **Workers & Pages > automecanico-pro > Settings > Variables**.
+
+#### 3. Executar o Deploy
+
+Basta rodar o comando:
+
+```bash
+npm run deploy
+```
+
+Este comando irá:
+1. Compilar a aplicação (`vite build`).
+2. Publicar o Worker e os assets estáticos no Cloudflare (`wrangler deploy`).
+
+Ao final do deploy, a Cloudflare informará o endereço do seu app (ex: `https://automecanico-pro.<seu-subdominio>.workers.dev`).
+
+---
+
+## Opção 2: Implantação Contínua via GitHub (CI/CD)
+
+Para configurar o deploy automático a cada `git push` no repositório GitHub:
+
+1. Acesse o painel da **Cloudflare** -> **Workers & Pages** -> **Create application** -> **Pages / Workers**.
+2. Conecte sua conta do **GitHub** e selecione o repositório `automecanico-pro`.
+3. Defina as configurações do build:
+   - **Framework preset**: `None` / `Vite`
+   - **Build command**: `npm run build`
+   - **Build output directory**: `dist/client` (ou configuração padrão de Workers)
+4. Em **Environment variables**, adicione suas variáveis:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`
+   - `VITE_AI_GATEWAY_URL`
+5. Clique em **Save and Deploy**.
+
+---
+
+## Opção 3: Hostinger FTP Compartilhado (Legado)
+
+Se ainda precisar realizar build estático para servidores Apache/FTP convencionais:
+
+```bash
 bash build-ftp.sh
-
-# Linux/Mac
-chmod +x build-ftp.sh
-./build-ftp.sh
 ```
 
-Ou manualmente:
-
-```bash
-npm run build
-PORT=3001 node server.js &
-curl -s http://localhost:3001/ > dist/client/index.html
-kill %1
-```
-
-#### 4. Upload via FTP
-
-Conecte-se ao seu servidor Hostinger via FTP (FileZilla, WinSCP, etc.) e **faça upload de TODO o conteudo da pasta `dist/client/` para a raiz do seu dominio** (`public_html/` ou `www/`).
-
-Arquivos que devem estar no servidor:
-
-```
-public_html/
-├── .htaccess
-├── index.html
-├── manifest.json
-├── registerSW.js
-├── sw.js
-├── icon-192x192.svg
-├── icon-512x512.svg
-└── assets/
-    ├── styles-XXXX.css
-    ├── index-XXXX.js
-    ├── client-XXXX.js
-    └── ... (demais arquivos JS)
-```
-
-#### 5. Verifique o .htaccess
-
-O arquivo `.htaccess` ja esta incluido no build. Ele redireciona todas as rotas para `index.html` para o React Router funcionar corretamente.
-
-Se precisar criar manualmente, o conteudo e:
-
-```apache
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /index.html [L]
-</IfModule>
-```
-
-#### 6. Teste
-
-Acesse `https://seudominio.com` e verifique se:
-- A pagina carrega corretamente
-- As rotas funcionam (ex: `/login`, `/app`, `/app/os`)
+Upload do conteúdo da pasta `dist/client/` para a pasta `public_html/` via FTP.
 - O login com Supabase funciona
 - O PWA pode ser instalado
 

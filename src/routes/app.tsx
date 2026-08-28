@@ -2,13 +2,11 @@ import { createFileRoute, Outlet, Navigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { AppSidebar, MobileBar } from "@/components/AppSidebar";
 import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
-  middleware: [requireSupabaseAuth],
 });
 
 function AppLayout() {

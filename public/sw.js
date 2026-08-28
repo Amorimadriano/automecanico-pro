@@ -1,7 +1,6 @@
-const CACHE_NAME = "automec-v1";
-const STATIC_CACHE = "automec-static-v1";
-const PAGES_CACHE = "automec-pages-v1";
-const API_CACHE = "automec-api-v1";
+const STATIC_CACHE = "automec-static-v3";
+const PAGES_CACHE = "automec-pages-v3";
+const API_CACHE = "automec-api-v3";
 
 const STATIC_ASSETS = [
   "/",
@@ -51,8 +50,22 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Suporta SKIP_WAITING enviado pelo registerSW.js
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
+
+  // Nunca intercepta/cacheia métodos que não sejam GET/HEAD
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    event.respondWith(fetch(request));
+    return;
+  }
+
   const url = new URL(request.url);
 
   // API Supabase: NetworkFirst
