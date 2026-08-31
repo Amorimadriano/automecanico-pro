@@ -3,35 +3,94 @@ import autoTable from "jspdf-autotable";
 import QRCode from "qrcode";
 import { BRL, fmtDate } from "./format";
 
-// Gera payload Pix EMVCo estático (padrão BRCODE)
-function gerarPayloadPix(chave: string, valor: number, _descricao: string): string {
+function formatarChavePix(chave: string): string {
+  const trimmed = chave.trim();
+  if (!trimmed) return "";
+
+  // Email
+  if (trimmed.includes("@")) {
+    return trimmed.toLowerCase();
+  }
+
+  // Chave Aleatória (EVP UUID)
+  if (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  // Telefone com +
+  if (trimmed.startsWith("+")) {
+    return "+" + trimmed.replace(/\D/g, "");
+  }
+
+  // Telefone com parênteses
+  if (trimmed.includes("(") || trimmed.includes(")")) {
+    return "+55" + trimmed.replace(/\D/g, "");
+  }
+
+  const digits = trimmed.replace(/\D/g, "");
+  // CNPJ (14 dígitos)
+  if (digits.length === 14) {
+    return digits;
+  }
+  // CPF (11 dígitos formatado com . ou -)
+  if (digits.length === 11 && (trimmed.includes(".") || trimmed.includes("-"))) {
+    return digits;
+  }
+
+  return trimmed;
+}
+
+// Gera payload Pix EMVCo estático (padrão BRCODE oficial do Banco Central do Brasil)
+function gerarPayloadPix(
+  chave: string,
+  valor: number,
+  _descricao: string = "",
+  nomeRecebedor: string = "OFICINA ERP",
+  cidadeRecebedor: string = "BRASIL"
+): string {
   function pad(id: string, val: string) {
     const len = val.length.toString().padStart(2, "0");
     return id + len + val;
   }
 
-  // Merchant Account Information
-  const mai = pad("00", "br.gov.bcb.pix") + pad("01", chave);
+  function sanitize(str: string, maxLen: number): string {
+    const normalized = str
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+      .replace(/[^a-zA-Z0-9 ]/g, "")   // Apenas alfanuméricos e espaços
+      .trim()
+      .toUpperCase();
+    return (normalized || "RECEBEDOR").substring(0, maxLen);
+  }
 
-  // Additional Data Field (TXID)
-  const txid = pad("05", "***");
+  const chaveFormatada = formatarChavePix(chave);
+  const nomeSanitizado = sanitize(nomeRecebedor, 25);
+  const cidadeSanitizada = sanitize(cidadeRecebedor, 15);
+
+  // 26 - Merchant Account Information (Pix)
+  const mai = pad("00", "br.gov.bcb.pix") + pad("01", chaveFormatada);
+
+  // 62 - Additional Data Field (TXID)
+  const txidSub = pad("05", "***");
 
   let payload =
-    pad("00", "01") +           // Payload Format Indicator
-    pad("26", mai) +            // Merchant Account Information
-    pad("52", "0000") +         // Merchant Category Code
-    pad("53", "986");           // Transaction Currency (BRL)
+    pad("00", "01") +             // Payload Format Indicator (000401)
+    pad("26", mai) +              // Merchant Account Information
+    pad("52", "0000") +           // Merchant Category Code
+    pad("53", "986");             // Transaction Currency (BRL)
 
   if (valor > 0) {
     payload += pad("54", valor.toFixed(2)); // Transaction Amount
   }
 
   payload +=
-    pad("58", "BR") +           // Country Code
-    pad("62", txid) +           // Additional Data Field
-    "6304";                     // CRC16 placeholder
+    pad("58", "BR") +             // Country Code (BR)
+    pad("59", nomeSanitizado) +   // Nome do Recebedor (Tag 59 - Obrigatório no padrão BRCODE!)
+    pad("60", cidadeSanitizada) + // Cidade do Recebedor (Tag 60 - Obrigatório no padrão BRCODE!)
+    pad("62", txidSub) +          // Additional Data Field (Tag 62)
+    "6304";                       // CRC16 placeholder
 
-  // CRC16-CCITT-FALSE
+  // CRC16-CCITT-FALSE (Padrão BCB)
   function crc16(str: string): string {
     let crc = 0xFFFF;
     const polynomial = 0x1021;
@@ -141,20 +200,35 @@ export async function gerarOSPdf(os: any, cliente: any, veiculo: any, itens: any
   // QR Code Pix
   if (empresa?.chave_pix && Number(os.total) > 0) {
     try {
-      const payload = gerarPayloadPix(empresa.chave_pix, Number(os.total), `OS #${os.numero}`);
+      const nomeEmpresa = empresa?.nome_fantasia || empresa?.razao_social || "OFICINA ERP";
+      const payload = gerarPayloadPix(
+        empresa.chave_pix,
+        Number(os.total),
+        `OS #${os.numero}`,
+        nomeEmpresa,
+        "BRASIL"
+      );
       const dataUrl = await QRCode.toDataURL(payload, { width: 300, margin: 2, errorCorrectionLevel: "M" });
       const qrSize = 40;
       const qrX = 14;
-      const qrY = doc.internal.pageSize.getHeight() - 60;
+      let qrY = doc.internal.pageSize.getHeight() - 60;
+
+      // Se a tabela se estender até a região do QR Code, adiciona nova página
+      if (finalY + 25 > qrY) {
+        doc.addPage();
+        qrY = 20;
+      }
+
       doc.addImage(dataUrl, "PNG", qrX, qrY, qrSize, qrSize);
 
+      const chaveFormatada = formatarChavePix(empresa.chave_pix);
       doc.setTextColor(40); doc.setFontSize(9); doc.setFont("helvetica", "bold");
       doc.text("Pague com Pix", qrX, qrY - 4);
       doc.setFontSize(8); doc.setFont("helvetica", "normal");
-      doc.text(`Chave: ${empresa.chave_pix}`, qrX + qrSize + 5, qrY + 10);
+      doc.text(`Chave: ${chaveFormatada}`, qrX + qrSize + 5, qrY + 10);
       doc.text(`Valor: ${BRL(os.total)}`, qrX + qrSize + 5, qrY + 16);
       doc.setFontSize(7); doc.setTextColor(120);
-      doc.text("Escaneie o QR Code ou copie a chave Pix", qrX + qrSize + 5, qrY + 24);
+      doc.text("Escaneie o QR Code no seu aplicativo de banco", qrX + qrSize + 5, qrY + 24);
 
       footerY = qrY - 8;
     } catch {

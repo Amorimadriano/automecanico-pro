@@ -55,7 +55,7 @@ function Page() {
       supabase.from("pecas_mecanico").select("*"),
     ]);
     setCliente(c); setVeiculo(v); setItens(it ?? []); setPecas(p ?? []);
-    const { data: emp } = await supabase.from("empresas_mecanico").select("*").single();
+    const { data: emp } = await supabase.from("empresas_mecanico").select("*").maybeSingle();
     setEmpresa(emp);
     if (o.funcionario_id) {
       const { data: f } = await supabase.from("funcionarios_mecanico").select("*").eq("id", o.funcionario_id).single();
