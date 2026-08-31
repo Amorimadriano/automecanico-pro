@@ -137,9 +137,9 @@ function LoginPage() {
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false },
+    const redirectTo = `${window.location.origin}/reset-password`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo,
     });
     setBusy(false);
     if (error) {
@@ -148,7 +148,7 @@ function LoginPage() {
     }
     recordSuccess(email);
     setRecoveryStep("otp");
-    toast.success("Código enviado! Verifique seu email (pode demorar alguns minutos).");
+    toast.success("Email enviado! Verifique seu email para obter o código ou link.");
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -159,8 +159,8 @@ function LoginPage() {
     setBusy(true);
     const { error } = await supabase.auth.verifyOtp({
       email,
-      token: otpCode,
-      type: "email",
+      token: otpCode.trim(),
+      type: "recovery",
     });
     setBusy(false);
     if (error) {
